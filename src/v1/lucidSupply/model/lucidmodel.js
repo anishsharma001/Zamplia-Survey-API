@@ -1,6 +1,6 @@
-const { execute, executedev } = require('../../database/queryWrapperMysql');
-const redis = require('../../middlewares/redisClient');
-const meta = require('../../config/meta.json');
+const { execute, executedev } = require('../../../database/queryWrapperMysql');
+const redis = require('../../../middlewares/redisClient');
+const meta = require('../../../config/meta.json');
 const {ApiClientId} = require('../utils/common');
 const { map: _map, slice : _slice , filter : _filter } = require('lodash');
 
