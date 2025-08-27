@@ -1,0 +1,19 @@
+{
+    "errorMsg":"Something went wrong when creating record of ip failed participant. Please contact to support.",
+    "sqlError":"DB Error",
+    "success":"success",
+    "insertMessage":"record inserted",
+    "insertFailure":"No records inserted",
+    "errMsgFirstPartyURL":"Error getting first party url",
+    "errCreatingRecord":"Error in creating record of participant",
+    "noSurveyFound":"No survey found for you",
+    "errUpdatingParticipant":"Error updating participant",
+    "logPath":"D:/node/log/api.log",
+    "logMode":"DIE",
+    "expireTimeThreeMin":"180",
+    "expireTimetwentyMin":"1800",
+    "expireTimeOneHour":"3600",
+    "noExpire":"-1",
+    "error":"Something went wrong. Please contact to support.",
+    "PASSPHRASE":"LOOPSURVEYS12345678909876543210"
+}
