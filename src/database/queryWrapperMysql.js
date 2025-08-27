@@ -3,28 +3,29 @@ const mysql = require("./databaseSetupMysql");
 exports.execute = function (query, bindValuesArray) {
   return new Promise((resolve, reject) => {
     mysql.pool.getConnection((err, connection) => {
-      const formattedQuery = formatQueryWithEscaping(query, bindValuesArray, connection);
-      console.log("Executing Query:", formattedQuery);
       if (err) {
         createLoggoingInDevDb(query, bindValuesArray, err);
-        reject(err);
+        return reject(err);
       }
-
-      if (connection) {
-        connection.query(query, bindValuesArray, function (error, resultData) {
-          logger.info(`query :---->${query}`);
-          if (error) {
-            createLoggoingInDevDb(query, bindValuesArray, error);
-
-            reject(error);
-          }
-          if (resultData) {
-            resolve(resultData);
-          }
-        });
-
+ 
+      if (!connection) {
+        return reject(new Error("No MySQL connection available"));
+      }
+ 
+      const formattedQuery = formatQueryWithEscaping(query, bindValuesArray, connection);
+      console.log("Executing Query:", formattedQuery);
+ 
+      connection.query(query, bindValuesArray, (error, resultData) => {
+        // release AFTER query finishes
         connection.release();
-      }
+ 
+        if (error) {
+          createLoggoingInDevDb(query, bindValuesArray, error);
+          return reject(error);
+        }
+ 
+        resolve(resultData);
+      });
     });
   });
 };
