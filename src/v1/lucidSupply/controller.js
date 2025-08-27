@@ -15,7 +15,7 @@ const { pauseLucidSurveys } = require("./utils/pauseSurveys");
 const { createSuveyBundle, createAllVendorDataBundle } = require("./operation");
 const { lucidSurveyQualification } = require("./surveyQualification");
 const { lucidSurveyQuota } = require("./surveyQuotas");
-const difference = require("lodash");
+const {difference} = require("lodash");
 const { createGroupSurveys, createGroupSurveysAllocated } = require("./groupSurveys");
 const { lucidSupplyLogs } = require("./lucidLogs");
 
