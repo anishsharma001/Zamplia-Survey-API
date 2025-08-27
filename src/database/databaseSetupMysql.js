@@ -1,5 +1,5 @@
 const mysql = require("mysql");
-
+const env = require('../config/env');
 let pool;
 
 if (process.env.NODE_ENV == "staging") {

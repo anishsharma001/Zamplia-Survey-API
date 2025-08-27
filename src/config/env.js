@@ -4,7 +4,7 @@ const path = require("path");
 console.log(process.env.NODE_ENV);
 
 config({
-  path: path.resolve(__dirname, "../", `.env.${process.env.NODE_ENV}.local`),
+  path: path.resolve(__dirname, "../../", `.env.production.local`),
 });
 
 const env = cleanEnv(process.env, {

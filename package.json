@@ -4,8 +4,8 @@
   "description": "zamplia-survey-api",
   "main": "src/server.js",
   "scripts": {
-    "start": "set NODE_ENV=production && node src/server.js",
-    "dev": "set NODE_ENV=productio && nodemon src/server.js"
+    "start": "set NODE_ENV=production&& node src/server.js",
+    "dev": "set NODE_ENV=production&& nodemon src/server.js"
   },
   "dependencies": {
     "async": "^3.2.6",
