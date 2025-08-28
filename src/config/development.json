@@ -1,0 +1,22 @@
+{
+    "api": {
+        "redis": {
+			"client": "Zamplia.redis.cache.windows.net",
+			"authPass": "yNTxRxlQGH5inU8SYMXncS6BlA1SMnQs7Nvhdh5ashg=",
+			"port": "6380"
+		},
+        "auth": {
+            "cookie": {
+                "secure": false
+            }
+        },
+        "mySql": {
+            "host": "64.202.188.184",
+            "port": "3306",
+            "user": "kuldeep",
+            "password": "kuldeep",
+            "database": "studyExchangeNew",
+            "multipleStatements": true
+        }
+    }
+}

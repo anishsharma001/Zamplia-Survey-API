@@ -1,0 +1,30 @@
+{
+	"port": 80,
+	"isProdcution": true,
+	"api": {
+		"redis": {
+			"client": "Zamplia.redis.cache.windows.net",
+			"authPass": "yNTxRxlQGH5inU8SYMXncS6BlA1SMnQs7Nvhdh5ashg=",
+			"port": "6380",
+			"tls": {
+				"key": "readCertFile",
+				"cert": "readCertFile",
+				"ca": [ "readCertFile"]
+			}
+		},
+		"auth": {
+			"cookie": {
+				"secure": true
+			}
+		},
+		"mySql": {
+			"host": "logitmarketplace.mysql.database.azure.com",
+			"port": "3306",
+			"user": "USR_marketplace@logitmarketplace",
+			"password": "@@Study^Exchange^Logit",
+			"database": "studyexchangedb",
+			"multipleStatements": true,
+			"ssl": true
+		}
+	}
+}

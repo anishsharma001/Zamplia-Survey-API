@@ -1,0 +1,38 @@
+Task: Survey Pulling 
+
+Dynamic country-wise survey pulling with language code - 2 hours
+Filter and retrieve all surveys based on specified criteria - 1 day
+Identify unique surveys based on survey ID and pause surveys not currently live - 1 day
+Upsert survey data into the database with bundle - 2-3 hours
+Retrieve all survey qualifications - 2 hours
+Filter survey qualifications based on client qualifications - 3 hours
+Upsert qualifications into the database - 1 hours
+Retrieve quotas for all surveys via survey ID - 2 hours
+Filter quota data based on questions and options - 2 day
+create and update a group quota bundle for survey quotas - 1.5 day
+Upsert the group quota bundle into the database - 2 hours
+check group security - 3 hour
+
+Task: Sync with Vendor for one vendor
+Sync and coordinate with the vendor - 1 day
+sync when project live and pause - 4 hour
+
+Task: Participant Flow
+Filter users who have not participated in the same survey ID - 2 hours
+Store participants' data in the database - 2 hours
+Retrieve the client redirect link from the endpoint - 2 hours
+Update the client redirect URL and store it in the database - 2 hours
+Redirect users to the client side - 1 hour
+check security and ip security - 3 hour
+group security - 3 hour
+
+After Redirect from the Client:
+Verify HMAC to ensure data integrity - 3 hours
+Update user data received back from the client - 3 hours
+Redirect users to the vendor side - 2 hours
+
+Task : Testing  & code review
+testing all above task - 1 day
+code review - 1 day
+
+After above task completed soft launch 

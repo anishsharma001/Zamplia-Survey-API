@@ -1,0 +1,17 @@
+{
+    "studies": {
+        "survey": {
+            "1001": {
+                "errorMessage": "some message",
+                "errorCode": 1001
+            },
+            "2001": {}
+        }
+    },
+    "authentication": {
+        "get": {
+            "errorMessage": "Invalid Login Credential.",
+            "errorCode": 1623
+        }
+    }
+}
