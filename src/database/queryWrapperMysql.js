@@ -60,7 +60,6 @@ function formatQueryWithEscaping(query, values, connection) {
 
 exports.executeQuery = function (query, bindValuesArray, resultCallBack) {
   mysql.connection.query(query, bindValuesArray, function (error, resultData) {
-    logger.info("query :: " + query);
     if (error) {
       resultCallBack(error);
     }
@@ -78,7 +77,6 @@ exports.executedev = function (query, bindValuesArray, resultCallBack) {
 
     if (connection) {
       connection.query(query, bindValuesArray, function (error, resultData) {
-        logger.info(`query :---->${query}`);
         if (error) {
           resultCallBack(error);
         }
@@ -101,7 +99,6 @@ exports.executeStaging = function (query, bindValuesArray, resultCallBack) {
 
     if (connection) {
       connection.query(query, bindValuesArray, function (error, resultData) {
-        logger.info(`query :---->${query}`);
         if (error) {
           resultCallBack(error);
         }
