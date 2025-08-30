@@ -3,7 +3,7 @@ const { getQuotaFromLucid } = require("./services/lucidServices");
 const { batchPromises } = require("./operation");
 const { lucidSupplyLogs } = require("./lucidLogs");
 const { qualificationBundle } = require('./surveyQualification')
-
+const { upsertStudyDemoDb, upsertStudyisRouterEligible, upsertStudyDemoOrder, upsertDemoAgeIntoDb, upsertIntoUnmappedqualification } = require("./model/lucidmodel");
 /**
  * Process Lucid survey quotas.
  * @param {Array} surveyData - Survey data.
