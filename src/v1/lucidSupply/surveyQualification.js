@@ -21,6 +21,7 @@ async function lucidSurveyQualification(surveyData, allDBQualificationData, allD
     let demosLangCode = [];
     let demoUnmaappedQualIds = [];
     let demoUnmaappedSurveyIds = [];
+    let allQualifictionAlreadyInseted = []
     // let globalStudyDemoMapping = []
 
     /**
@@ -31,6 +32,7 @@ async function lucidSurveyQualification(surveyData, allDBQualificationData, allD
       try {
         const SurveyQualification = await getQualificationFromApi(surveyIndex[0]);
         if (SurveyQualification.ResultCount > 0 && SurveyQualification.SurveyQualification.Questions && SurveyQualification.SurveyQualification.Questions.length) {
+          allQualifictionAlreadyInseted.push(SurveyQualification.SurveyQualification)
           const createQualificationBundle = await qualificationBundle(SurveyQualification.SurveyQualification, allDBQualificationData, allDbOptions, lang_code);
           const { bundleNonRangeQualification, bundleGlobalDemoData, bundleRangeQualification, bundleRangeOrder, notMatched, unMappedQualData, unMappedSurveyId, unMappedQualIds, lang_codedata } = createQualificationBundle;
           if (notMatched) {
@@ -59,24 +61,24 @@ async function lucidSurveyQualification(surveyData, allDBQualificationData, allD
       await processSurvey(surveyIndex);
     }
     if (allStudyQualBundle.length) {
-      await upsertStudyDemoDb(allStudyQualBundle);
-      // await upsertGlobaleDemoDB(globalStudyDemoMapping)
+       upsertStudyDemoDb(allStudyQualBundle);
+      //  upsertGlobaleDemoDB(globalStudyDemoMapping)
     }
     if (allStudyAgeQualBundle.length) {
-      await upsertDemoAgeIntoDb(allStudyAgeQualBundle);
+       upsertDemoAgeIntoDb(allStudyAgeQualBundle);
     }
     if (allStudyQualOrderBundle.length) {
-      await upsertStudyDemoOrder(allStudyQualOrderBundle);
+       upsertStudyDemoOrder(allStudyQualOrderBundle);
     }
     if (unMappedQualificationSurveys.length) {
-      await upsertStudyisRouterEligible(unMappedQualificationSurveys.join("','"));
-      await logsUnMappedQualData(unMappedQualDatas);
+       upsertStudyisRouterEligible(unMappedQualificationSurveys.join("','"));
+       logsUnMappedQualData(unMappedQualDatas);
     }
 
     if (demoUnmaappedSurveyIds.length && demoUnmaappedQualIds.length && demosLangCode.length) {
-      await upsertIntoUnmappedqualification(demoUnmaappedSurveyIds, demoUnmaappedQualIds, demosLangCode);
+       upsertIntoUnmappedqualification(demoUnmaappedSurveyIds, demoUnmaappedQualIds, demosLangCode);
     }
-    return true;
+    return allQualifictionAlreadyInseted;
   } catch (error) {
     throw new Error(`Oops! Something went wrong. ${error.message}`);
   }
@@ -183,4 +185,4 @@ async function qualificationBundle(lucidSurveyQualification, allDBZampliaQualifi
   }
 }
 
-module.exports = { lucidSurveyQualification };
+module.exports = { lucidSurveyQualification, qualificationBundle };
