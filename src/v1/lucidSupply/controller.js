@@ -148,8 +148,11 @@ async function surveyPulling(lang_code, CPIGTE, CPILTE, LengthOfInterviewLTE, Co
 
     // Process survey qualifications and quotas
 
-    await Promise.all([lucidSurveyQualification(surveyBundleData[2], allQualifications, allOptions, lang_code)]);
-    Promise.all([lucidSurveyQuota(surveyBundleData[2], allQualifications, allOptions, lang_code)]);
+    // letawait Promise.all([lucidSurveyQualification(surveyBundleData[2], allQualifications, allOptions, lang_code)]);
+    // Promise.all([lucidSurveyQuota(surveyBundleData[2], allQualifications, allOptions, lang_code)]);
+
+    let insertedQualification = await lucidSurveyQualification(surveyBundleData[2], allQualifications, allOptions, lang_code);
+    lucidSurveyQuota(surveyBundleData[2], allQualifications, allOptions, lang_code, insertedQualification);
 
     // // Group security
     if (surveyBundleData[0].length) {

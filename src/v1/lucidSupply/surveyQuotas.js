@@ -2,7 +2,8 @@ const { pauseUnAvailableQuotas, getAllInsertedQuotas, insertQuotaDemoIntoDb, Ins
 const { getQuotaFromLucid } = require("./services/lucidServices");
 const { batchPromises } = require("./operation");
 const { lucidSupplyLogs } = require("./lucidLogs");
-
+const { qualificationBundle } = require('./surveyQualification')
+const { upsertStudyDemoDb, upsertStudyisRouterEligible, upsertStudyDemoOrder, upsertDemoAgeIntoDb, upsertIntoUnmappedqualification } = require("./model/lucidmodel");
 /**
  * Process Lucid survey quotas.
  * @param {Array} surveyData - Survey data.
@@ -11,7 +12,7 @@ const { lucidSupplyLogs } = require("./lucidLogs");
  * @param {string} lang_code - The language code.
  * @returns {Promise<boolean>} A promise that resolves to true when quotas are processed successfully.
  */
-async function lucidSurveyQuota(surveyData, allDBQualificationData, allDbOptions, lang_code) {
+async function lucidSurveyQuota(surveyData, allDBQualificationData, allDbOptions, lang_code, insertedQualification) {
   try {
     const allSurveysQuota = [];
     const allSurveyIds = [];
@@ -43,12 +44,57 @@ async function lucidSurveyQuota(surveyData, allDBQualificationData, allDbOptions
 
     await InsertQuotaDataIntoDb(allSurveysQuota);
     const getAllQuotaIds = await getAllInsertedQuotas(allSurveyIds);
-    const createQuotaDemoBundle = await getSurveyQuotaDemo(getAllQuotaIds, allClientQuotaDatas, allDBQualificationData, allDbOptions);
+    const createQuotaDemoBundle = await getSurveyQuotaDemo(getAllQuotaIds, allClientQuotaDatas, allDBQualificationData, allDbOptions, insertedQualification);
 
     await insertQuotaDemoIntoDb(createQuotaDemoBundle.quotaDemoBundle);
 
     if (createQuotaDemoBundle.pauseQuotasUnAvailable.length) {
       await pauseUnAvailableQuotas(createQuotaDemoBundle.pauseQuotasUnAvailable);
+    }
+
+    if (createQuotaDemoBundle.allQualNeedToInsertInDb.length) {
+
+      let allStudyQualBundle = [];
+      let allStudyAgeQualBundle = [];
+      let allStudyQualOrderBundle = [];
+      let unMappedQualificationSurveys = [];
+      let unMappedQualDatas = [];
+      let demosLangCode = [];
+      let demoUnmaappedQualIds = [];
+      let demoUnmaappedSurveyIds = [];
+
+      for (let surveyIndex = 0; surveyIndex < createQuotaDemoBundle.allQualNeedToInsertInDb.length; surveyIndex++) {
+        let index = createQuotaDemoBundle.allQualNeedToInsertInDb[surveyIndex];
+        const createQualificationBundle = await qualificationBundle(index, allDBQualificationData, allDbOptions, lang_code);
+        const { bundleNonRangeQualification, bundleGlobalDemoData, bundleRangeQualification, bundleRangeOrder, notMatched, unMappedQualData, unMappedSurveyId, unMappedQualIds, lang_codedata } = createQualificationBundle;
+        if (notMatched) {
+          demoUnmaappedQualIds.push(...unMappedQualIds);
+          demoUnmaappedSurveyIds.push(...unMappedSurveyId);
+          demosLangCode.push(...lang_codedata);
+          unMappedQualDatas.push(...unMappedQualData);
+          unMappedQualificationSurveys.push("LD" + index.SurveyNumber);
+        }
+        allStudyQualBundle.push(...bundleNonRangeQualification);
+        allStudyAgeQualBundle.push(...bundleRangeQualification);
+        allStudyQualOrderBundle.push(...bundleRangeOrder);
+      }
+
+      if (allStudyQualBundle.length) {
+        upsertStudyDemoDb(allStudyQualBundle);
+      }
+      if (allStudyAgeQualBundle.length) {
+        upsertDemoAgeIntoDb(allStudyAgeQualBundle);
+      }
+      if (allStudyQualOrderBundle.length) {
+        upsertStudyDemoOrder(allStudyQualOrderBundle);
+      }
+      if (unMappedQualificationSurveys.length) {
+        upsertStudyisRouterEligible(unMappedQualificationSurveys.join("','"));
+      }
+      if (demoUnmaappedSurveyIds.length && demoUnmaappedQualIds.length && demosLangCode.length) {
+        upsertIntoUnmappedqualification(demoUnmaappedSurveyIds, demoUnmaappedQualIds, demosLangCode);
+      }
+
     }
 
     return true;
@@ -105,10 +151,10 @@ async function quotaBundle(quotaData, lang_code, surveyIndex) {
  * @param {Array} allDbOptions - All options data.
  * @returns {Object} An object containing the quota demo bundle and pause quotas that are unavailable.
  */
-async function getSurveyQuotaDemo(getAllZampQuotaIds, clientQuotaData, allDBQualificationData, allDbOptions) {
+async function getSurveyQuotaDemo(getAllZampQuotaIds, clientQuotaData, allDBQualificationData, allDbOptions, insertedQualification) {
   const quotaDemoBundle = [];
   const pauseQuotasUnAvailable = [];
-
+  let allQualNeedToInsertInDb = [];
   // Traverse the all Lucid Surveys Demo Data
   for (const clientQuotaIndex of clientQuotaData) {
     const { SurveyNumber, SurveyQuotas } = clientQuotaIndex;
@@ -117,11 +163,58 @@ async function getSurveyQuotaDemo(getAllZampQuotaIds, clientQuotaData, allDBQual
       continue;
     }
 
+    let existingSurvey = insertedQualification.find((item) => item.SurveyNumber === SurveyNumber);
+    let existingQuestionIds = [];
+
+    if (existingSurvey && existingSurvey.Questions) {
+      for (const question of existingSurvey.Questions) {
+        existingQuestionIds.push(question.QuestionID);
+      }
+    }
+
     for (const quotaIndex of SurveyQuotas) {
       const date = new Date();
 
       if (!quotaIndex.Questions.length) {
         continue;
+      }
+
+      let newQuestionsMap = {};
+
+      for (const question of quotaIndex.Questions) {
+        // Skip if this question already exists in DB
+        if (existingQuestionIds.includes(question.QuestionID)) {
+          continue;
+        }
+
+        // If we've seen this question before, merge PreCodes
+        if (newQuestionsMap[question.QuestionID]) {
+          // Add new PreCodes that don't exist
+          for (const preCode of question.PreCodes) {
+            if (!newQuestionsMap[question.QuestionID].PreCodes.includes(preCode)) {
+              newQuestionsMap[question.QuestionID].PreCodes.push(preCode);
+            }
+          }
+        } else {
+          // First time seeing this question, add it
+          newQuestionsMap[question.QuestionID] = {
+            QuestionID: question.QuestionID,
+            PreCodes: [...question.PreCodes], // Make a copy
+          };
+        }
+      }
+
+      let questionsArray = [];
+      for (const questionId in newQuestionsMap) {
+        questionsArray.push(newQuestionsMap[questionId]);
+      }
+
+      // Add to final result if we found new questions
+      if (questionsArray.length > 0) {
+        allQualNeedToInsertInDb.push({
+          SurveyNumber: SurveyNumber,
+          Questions: questionsArray,
+        });
       }
 
       let dbQuotaData = getAllZampQuotaIds.filter((d) => d.clientQuotaId == quotaIndex.SurveyQuotaID && d.studyId === "LD" + SurveyNumber);
@@ -159,7 +252,7 @@ async function getSurveyQuotaDemo(getAllZampQuotaIds, clientQuotaData, allDBQual
     }
   }
 
-  return { quotaDemoBundle, pauseQuotasUnAvailable };
+  return { quotaDemoBundle, pauseQuotasUnAvailable, allQualNeedToInsertInDb };
 }
 
 module.exports = { lucidSurveyQuota };
