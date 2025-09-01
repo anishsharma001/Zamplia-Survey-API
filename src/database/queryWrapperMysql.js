@@ -24,7 +24,7 @@ exports.execute = function (query, bindValuesArray) {
           return reject(error);
         }
  
-        resolve(resultData);
+        return resolve(resultData);
       });
     });
   });

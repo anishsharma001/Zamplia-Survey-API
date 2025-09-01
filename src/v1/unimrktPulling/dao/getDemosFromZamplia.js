@@ -1,6 +1,6 @@
 const {executeDev7} = require('../../../database/queryWrapperMysql');
-const redis = require('../../middlewares/redisClient');
-const meta = require('../../config/meta.json');
+const redis = require('../../../middlewares/redisClient');
+const meta = require('../../../config/meta.json');
 async function getAllOptionsFromDb(lang_code) {
   try {
     const query = 'select * from queryoptions where lang_code = ? and unimrktOid is not null';
@@ -163,6 +163,16 @@ catch(error){
   return (`Oops! something went wrong, ${error.message}`);
 }
 }
+
+async function updateAllSurveyStatus(allSurveys, apiClientId) {
+  return new Promise(function (resolve, reject) {
+    var query = "UPDATE studies SET status = 'On Hold', isActive = 0 where apiSurveyId IN( ? ) AND apiClientId = ? AND isActive = 1";
+    queryWrapper.execute(query, [allSurveys, apiClientId], function (result) {
+      resolve(result);
+    });
+  });
+}
+
 module.exports = { getAllOptionsFromDb,
   getAllQualificationFromDb,
   existingMappings,
@@ -175,5 +185,6 @@ module.exports = { getAllOptionsFromDb,
   InsertQuotaDataIntoDb,
   pauseUnAvailableQuotas,
   upsertIntoUnmappedqualification,
-  upsertStudyisRouterEligible
+  upsertStudyisRouterEligible,
+  updateAllSurveyStatus
  };

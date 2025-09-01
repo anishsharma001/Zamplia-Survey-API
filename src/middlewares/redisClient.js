@@ -3,7 +3,7 @@ const fs = require('fs');
 const tls = require('tls');
 const asyncRedis = require('async-redis');
 const config = require('../config/redisConfig');
-
+const queryWrapper  = require('../database/queryWrapperMysql')
 const log4js = require('../config/logger');
 const logger = log4js.getLogger('RedisClient');
 
