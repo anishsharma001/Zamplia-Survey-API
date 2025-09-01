@@ -1,10 +1,10 @@
-const { executeDev7 } = require('../../database/queryWrapperMysql');
+const { executeDev7 } = require('../../../database/queryWrapperMysql');
 const { API_CLIENT_ID } = require('../utils/config');
-const redis = require('../../middlewares/redisClient');
-const meta = require('../../config/meta.json');
+const redis = require('../../../middlewares/redisClient');
+const meta = require('../../../config/meta.json');
 const { map: _map, slice : _slice , filter : _filter } = require('lodash');
 const {createmapingBundle}  = require('../operation');
-const { syncOnVendorApis } = require('../../syncProjectsOnVendors/services');
+// const { syncOnVendorApis } = require('../../syncProjectsOnVendors/services');
 
 
 /**
@@ -327,7 +327,7 @@ async function vendorMapping(surveyData) {
       let mappingData = await createmapingBundle(surveyData[i], currentVendorData, requirement[0].orignalRequirment);
       await upsertMappingData(mappingData);
     }
-    await syncOnVendorApis(surveyData[i][0]);
+    // await syncOnVendorApis(surveyData[i][0]);
   }
 }
 

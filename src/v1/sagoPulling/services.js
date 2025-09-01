@@ -5,14 +5,14 @@ const {
   SurveyGroupBaseUrl
 } = require('./url');
 const {insertlogs} = require('./comman')
-const fetch = require('node-fetch');
+
 async function getQualificationFromApi(surveyId) {
     try {
         const getQualificationUrl = SurveyQualBaseUrl + surveyId;
         await new Promise(resolve => setTimeout(resolve, 200));
         const response = await fetch(getQualificationUrl);
         const data = await response.json();
-        await insertlogs(data, response?.status || 200, surveyId);
+        // await insertlogs(data, response?.status || 200, surveyId);
         return data;
     } catch (error) {
         await insertlogs(error, 500, surveyId);
@@ -26,7 +26,7 @@ async function getQuotaFromMCQ(surveyId) {
         await new Promise(resolve => setTimeout(resolve, 200));
         const response = await fetch(MCQQuotaUrl);
         const data = await response.json();
-        await insertlogs(data, 201, surveyId);
+        // await insertlogs(data, 201, surveyId);
         return data;
     } catch (error) {
         await insertlogs(error, 501, surveyId);

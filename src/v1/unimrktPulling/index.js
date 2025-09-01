@@ -20,7 +20,11 @@ const {unimarketQuota} = require('./dao/surveyQuota');
 		const conversionRate = Number(req.query.conversion);
 	
 		if (!allSurveys.success) {
-			return { status: 500, message: 'Error fetching surveys' };
+			res.status(400).json({
+  status: 400,
+  message: 'error fetching surveys'
+});
+
 		}
 
 		const allowedLanguageIds = new Set([
@@ -117,10 +121,19 @@ const {unimarketQuota} = require('./dao/surveyQuota');
 		const processedSurveys = await processSurveys(groupedByLanguageId, allSurveysToUpsert);
 	
 		
-		return { status: 200, message: 'Data processed successfully', processedSurveys };
+		res.status(200).json({
+			status: 200,
+			message: 'Data processed successfully',
+			processedSurveys
+		});
 	} catch (error) {
 		console.error('Error:', error);
-		return { status: 400, message: 'Oops, something went wrong', error };
+		res.status(400).json({
+			status: 400,
+			message: 'Oops, something went wrong',
+			error
+});
+
 	}
 }
 
@@ -234,11 +247,12 @@ async function processSurveys(groupedByLanguageId, allSurveysToUpsert) {
 		const allDbSurveys = await getDbSurveys.getAllApiSurveyFromDbStudies("", appConstants.Unimrkt_SURVEY_TYPE_ID);
 		const surveysToPause = difference(allDbSurveys, allSurveyIds);
 
-		if (surveysToPause.length > 0) {
-			await mrktDao.surveysToPause(surveysToPause, appConstants.Unimrkt_SURVEY_TYPE_ID)
-		}
+		// if (surveysToPause.length > 0) {
+		// 	await mrktDao.surveysToPause(surveysToPause, appConstants.Unimrkt_SURVEY_TYPE_ID)
+		// }
 		
-    for (const langCode in groupedByLanguageId) {      
+    for (const langCode in groupedByLanguageId) { 
+		    console.log(langCode) ;   
 			const [desiredQualification, allQualifications, allOptions] = await Promise.all([
 				existingMappings(langCode),
 				getAllQualificationFromDb(langCode),
@@ -316,10 +330,10 @@ async function processSurveys(groupedByLanguageId, allSurveysToUpsert) {
 							
 			const quotaSurveys = (await Promise.all(quotaSurveysAddComplete)).flat();
 				// Process survey qualifications and quotas in here
-			await Promise.all([
-				unimarketQualification(surveysToInsert[0], allQualifications, allOptions, langCode),
-				unimarketQuota(quotaSurveys, allQualifications, allOptions, langCode),
-			]);      
+	
+			await unimarketQualification(surveysToInsert[0], allQualifications, allOptions, langCode);
+			await	unimarketQuota(quotaSurveys, allQualifications, allOptions, langCode);
+		 
 			
       
     }

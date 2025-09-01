@@ -1,7 +1,7 @@
 const NetworkService = require('./NetworkService');
 const {getLangIdFromDb,getAppConfig, upsertStudiesData, getAllQualificationFromDb,getAllOptionsFromDb, getAllLiveSurveyFromDb, pauseBioBrainSurveys } = require('./dao');
 const {createSuveyBundle, insertQuals, insertQuotas } = require('./operations');
-const difference = require('lodash.difference');
+const {difference} = require('lodash');
 
 
 

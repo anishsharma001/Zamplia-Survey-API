@@ -1,7 +1,7 @@
 // BioBrainPulling/index.js
 const { getProjectFromApi } = require('./controller');
 
-module.exports = async function (context, req) {
+async function BioBrainPulling(req, res) {
   try {
     const languageMap = [
       "English-GB",
@@ -70,15 +70,20 @@ module.exports = async function (context, req) {
       getProjectFromApi(lang);
     });
 
-    context.res = {
-      body: { success: true },
-    };
+   res.status(200).json({
+  status: 200,
+  message: 'Data processed successfully'
+
+});
   } catch (error) {
     console.error('Error:', error);
-    context.res = {
-      status: 500,
-      body: { success: false, message: error.message || error },
-    };
+    res.status(500).json({
+  status: 500,
+  message: 'something went wrong',
+  
+});
   }
 };
-
+module.exports ={
+  BioBrainPulling:BioBrainPulling
+}

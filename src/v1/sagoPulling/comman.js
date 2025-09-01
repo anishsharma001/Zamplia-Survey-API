@@ -1,26 +1,21 @@
-const queryWrapper = require('../../database/databaseSetupMysql');
-const { executeQuery } = require('../../database/queryWrapperMysql');
+const {queryWrapper} = require('../../database/databaseSetupMysql');
+const { executeDev7 } = require('../../database/queryWrapperMysql');
 const redis = require('../../middlewares/redisClient');
 const meta = require('../../config/meta.json');
 const appConstants = require('./appConstants');
-function deletePulledStudies(_id) {
-  return new Promise(function (resolve, reject) {
-    let sql = "delete from pulled_studies where _id = ?";
-    queryWrapper.execute(sql, [_id], function (studyDelete) {
-      if (studyDelete.errno && studyDelete.errno !== undefined) {
-        let returnData = {};
-        returnData.success = false;
-        returnData.error = studyDelete;
-        returnData.message = "Error to delete pulled study";
-        resolve(returnData);
-      } else {
-        let returnData = {};
-        returnData.success = true;
-        returnData.message = "Study deleted successfully";
-        resolve(returnData);
-      }
-    });
-  })
+const { map: _map, slice : _slice , filter : _filter } = require('lodash');
+
+async function deletePulledStudies(_id) {
+  const sql = "DELETE FROM pulled_studies WHERE _id = ?";
+
+  const result = await executeDev7(sql, [_id]);
+
+  // return a consistent response object
+  return {
+    success: true,
+    message: "Study deleted successfully",
+    result: result
+  };
 }
 
 async function getAllQualificationFromDb(lang_code) {
@@ -61,236 +56,223 @@ async function getAllLangCodeForMcq() {
 
 async function upsertStudyDemoDb(data) {
   try {
-    return new Promise(function (resolve, reject) {
-      let sql = `insert into studydemomapping(sqid, studyId, demographicId, queryId, optionId, allText, createdAt, updatedAt, lang_code, apiUniqueId) values ? ON 
-    DUPLICATE KEY UPDATE demographicId=values(demographicId), queryId=values(queryId),  optionId=values(optionId), allText=values(allText), updatedAt=(updatedAt),lang_code=values(lang_code)`;
-      queryWrapper.execute(sql, [data], function (data) {
-        if (data.errno && data.errno !== undefined) {
-          resolve([]);
-        } else {
-          resolve(data);
-        }
-      });
-    })
+    const sql = `INSERT INTO studydemomapping
+      (sqid, studyId, demographicId, queryId, optionId, allText, createdAt, updatedAt, lang_code, apiUniqueId)
+      VALUES ?
+      ON DUPLICATE KEY UPDATE
+        demographicId = VALUES(demographicId),
+        queryId = VALUES(queryId),
+        optionId = VALUES(optionId),
+        allText = VALUES(allText),
+        updatedAt = NOW(),
+        lang_code = VALUES(lang_code)`;
 
-
-  } catch (error) {
-    throw new Error(`Oops Something went wrong: ${error.message}`);
+    // executeDev7 expects query and values array
+    const result = await executeDev7(sql, [data]);
+    return result;
+  } catch (err) {
+    console.error("Error in upsertStudyDemoDb:", err);
+    return [];
   }
 }
 
 
-
-async function insertlogs(data,status,surveyid) {
+async function insertlogs(data, status, surveyid) {
   try {
-  
-    return new Promise(function (resolve, reject) {
-    let sql = "insert into mcqApiLog(response,status,survey_id) values (?,?,?)";
-    queryWrapper.execute(sql, [JSON.stringify(data),status,surveyid], function (data) {
-      if (data.errno && data.errno !== undefined) {
-       resolve([])
-      } else {
-        
-        resolve(data);
-      }
-    });
-  })
-
+    const sql = "INSERT INTO mcqApiLog(response, status, survey_id, created_at) VALUES (?, ?, ?, ?)";
+    
+    const result = await executeDev7(sql, [JSON.stringify(data), status, surveyid,new Date]);
+    
+    return result;
   } catch (error) {
-    throw new Error(`Oops Something went wrong: ${error.message}`);
+    console.error("Error inserting logs:", error);
+    return [];
   }
 }
-
 
 
 async function upsertDemoAgeIntoDb(surveydata) {
   try {
-    
-    return new Promise(function (resolve, reject) {
-    let sql = `insert into demoagemapping(sqid, studyId, demographicId, queryId, ageTo, ageFrom, createdAt, updatedAt, lang_code, apiUniqueId) values ? ON 
-    DUPLICATE KEY UPDATE demographicId=values(demographicId), queryId=values(queryId), ageTo=values(ageTo), ageFrom=values(ageFrom), updatedAt=(updatedAt),lang_code=values(lang_code)`;
-    queryWrapper.execute(sql, [surveydata], function (data) {
-      if (data.errno && data.errno !== undefined) {
-       resolve([])
-      } else {
-        
-        resolve(data);
-      }
-    });
-  })
+    const sql = `INSERT INTO demoagemapping
+      (sqid, studyId, demographicId, queryId, ageTo, ageFrom, createdAt, updatedAt, lang_code, apiUniqueId)
+      VALUES ?
+      ON DUPLICATE KEY UPDATE
+        demographicId = VALUES(demographicId),
+        queryId = VALUES(queryId),
+        ageTo = VALUES(ageTo),
+        ageFrom = VALUES(ageFrom),
+        updatedAt = NOW(),
+        lang_code = VALUES(lang_code)`;
 
-  
+    const result = await executeDev7(sql, [surveydata]);
+    return result;
   } catch (error) {
-    throw new Error(`Oops Something went wrong: ${error.message}`);
+    console.error("Error in upsertDemoAgeIntoDb:", error);
+    return [];
   }
 }
+
 
 async function upsertStudyDemoOrder(surveyData) {
   try {
-     return new Promise(function (resolve, reject) {
-    let sql = `insert into projectscreenerorder(studyId, screener_id, order_no, createdAt, updatedAt, lang_code, apiUniqueId) values ? ON 
-    DUPLICATE KEY UPDATE studyId=values(studyId), screener_id=values(screener_id), order_no=values(order_no), updatedAt=(updatedAt),lang_code=values(lang_code)`;
-    queryWrapper.execute(sql, [surveyData], function (data) {
-      if (data.errno && data.errno !== undefined) {
-       resolve([])
-      } else {
-        
-        resolve(data);
-      }
-    });
-  })
+    const sql = `INSERT INTO projectscreenerorder
+      (studyId, screener_id, order_no, createdAt, updatedAt, lang_code, apiUniqueId)
+      VALUES ?
+      ON DUPLICATE KEY UPDATE
+        studyId = VALUES(studyId),
+        screener_id = VALUES(screener_id),
+        order_no = VALUES(order_no),
+        updatedAt = NOW(),
+        lang_code = VALUES(lang_code)`;
 
-  
-
+    const result = await executeDev7(sql, [surveyData]);
+    return result;
   } catch (error) {
-    throw new Error(`Oops Something went wrong: ${error.message}`);
+    console.error("Error in upsertStudyDemoOrder:", error);
+    return [];
   }
 }
+
 
 async function InsertQuotaDataIntoDb(quotaData) {
   try {
-    
-    return new Promise(function (resolve, reject) {
-    let sql = `insert into constrainsts(sqid, clientQuotaId, studyId, type, title, totalQuota, requirement, isActive, createdAt, updatedAt, lang_code, apiUniqueQuotaId) values ? ON 
-      DUPLICATE KEY UPDATE  title=values(title), totalQuota=values(totalQuota), requirement=values(requirement), isActive = values(isActive), updatedAt=(updatedAt),lang_code=values(lang_code)`;
-    queryWrapper.execute(sql, [quotaData], function (data) {
-      if (data.errno && data.errno !== undefined) {
-       resolve([])
-      } else {
-        
-        resolve(data);
-      }
-    });
-  })
-} catch (error) {
-    throw new Error(`Oops Something went wrong: ${error.message}`);
+    const sql = `INSERT INTO constrainsts
+      (sqid, clientQuotaId, studyId, type, title, totalQuota, requirement, isActive, createdAt, updatedAt, lang_code, apiUniqueQuotaId)
+      VALUES ?
+      ON DUPLICATE KEY UPDATE
+        title = VALUES(title),
+        totalQuota = VALUES(totalQuota),
+        requirement = VALUES(requirement),
+        isActive = VALUES(isActive),
+        updatedAt = NOW(),
+        lang_code = VALUES(lang_code)`;
+
+    const result = await executeDev7(sql, [quotaData]);
+    return result;
+  } catch (error) {
+    console.error("Error in InsertQuotaDataIntoDb:", error);
+    return [];
   }
 }
+
 
 
 async function getAllInsertedQuotas(surveyIds) {
   try {
-    
-  return new Promise(function (resolve, reject) {
-      const studyIds = surveyIds.map(d => "MCQ" + d).join("','");
-    let sql = `select id, clientQuotaId, studyId, isActive from constrainsts where studyId in ('${studyIds}')`;
-    queryWrapper.execute(sql, [], function (data) {
-      if (data.errno && data.errno !== undefined) {
-       resolve([])
-      } else {
-        
-        resolve(data);
-      }
-    });
-  })
+    if (!surveyIds || surveyIds.length === 0) return [];
 
-  
+    // Prefix survey IDs with "MCQ"
+    const prefixedIds = surveyIds.map(d => "MCQ" + d);
 
+    // Prepare placeholders for parameterized query
+    const placeholders = prefixedIds.map(() => "?").join(",");
+
+    const sql = `SELECT id, clientQuotaId, studyId, isActive 
+                 FROM constrainsts 
+                 WHERE studyId IN (${placeholders})`;
+
+    const result = await executeDev7(sql, prefixedIds);
+    return result;
   } catch (error) {
-    throw new Error("Oops Something wrong went during quota fetching!");
+    console.error("Error fetching quotas:", error);
+    return [];
   }
 }
+
 
 
 async function insertQuotaDemoIntoDb(QuotaDemo) {
   try {
-  
- return new Promise(function (resolve, reject) {
-    let sql = `INSERT INTO constrainstdemos(studyId, quotaId, demographicId, quotaDemoId, optionIds, createdAt, updatedAt) 
-    VALUES ?  ON DUPLICATE KEY UPDATE quotaId = VALUES(quotaId), demographicId = VALUES(demographicId), optionIds = VALUES(optionIds),  updatedAt = VALUES(updatedAt)`;
-    queryWrapper.execute(sql, [QuotaDemo], function (data) {
-      if (data.errno && data.errno !== undefined) {
-       resolve([])
-      } else {
-        
-        resolve(data);
-      }
-    });
-  })
+    const sql = `INSERT INTO constrainstdemos
+      (studyId, quotaId, demographicId, quotaDemoId, optionIds, createdAt, updatedAt)
+      VALUES ?
+      ON DUPLICATE KEY UPDATE
+        quotaId = VALUES(quotaId),
+        demographicId = VALUES(demographicId),
+        optionIds = VALUES(optionIds),
+        updatedAt = NOW()`;
 
-  
-
-
+    const result = await executeDev7(sql, [QuotaDemo]);
+    return result;
   } catch (error) {
-    throw new Error(`Oops Something went wrong: ${error.message}`);
+    console.error("Error inserting quota demo data:", error);
+    return [];
   }
 }
+
 
 
 async function pauseUnAvailableQuotas(pauseUnAvailableQuotas) {
   try {
-    
-   return new Promise(function (resolve, reject) {
-    const clientQuotaIds = pauseUnAvailableQuotas.join("','");
-    let sql = `Update constrainsts set isActive = 0 where clientQuotaId in ('${clientQuotaIds}')`;
-    queryWrapper.execute(sql, [JSON.stringify(data),status,surveyid], function (data) {
-      if (data.errno && data.errno !== undefined) {
-       resolve([])
-      } else {
-        
-        resolve(data);
-      }
-    });
-  })
+    if (!pauseUnAvailableQuotas || pauseUnAvailableQuotas.length === 0) return [];
 
-  
+    // Prepare placeholders for parameterized query
+    const placeholders = pauseUnAvailableQuotas.map(() => "?").join(",");
+
+    const sql = `UPDATE constrainsts 
+                 SET isActive = 0 
+                 WHERE clientQuotaId IN (${placeholders})`;
+
+    const result = await executeDev7(sql, pauseUnAvailableQuotas);
+    return result;
   } catch (error) {
-    throw new Error(`Oops! something went wrong, ${error.message}`);
-
+    console.error(`Error pausing unavailable quotas: ${error.message}`);
+    return [];
   }
 }
 
-async function updateGroupSurveysData(allStudyIds, surveyGroupId) {
+
+async function updateGroupSurveysData(allStudyIds, surveyGroupId, apiClientId = 1) {
   try {
+    if (!allStudyIds || allStudyIds.length === 0) return [];
 
-    return new Promise(function (resolve, reject) {
-      let query = "";
-      if (surveyGroupId.includes(",")) {
-        query = `update studies set groupsecurity = "${surveyGroupId}" where apiClientId = ? and _id in (${allStudyIds}) and isActive = 1`;
-      } else {
-        query = `update studies set groupsecurity = ${surveyGroupId} where apiClientId = ? and _id in (${allStudyIds}) and isActive = 1`;
-      }
+    // Prepare placeholders for _id
+    const placeholders = allStudyIds.map(() => "?").join(",");
 
-      queryWrapper.execute(query, [1], function (data) {
-        if (data.errno && data.errno !== undefined) {
-          resolve([])
-        } else {
+    // groupsecurity value as string
+    const groupValue = surveyGroupId.includes(",") ? `"${surveyGroupId}"` : surveyGroupId;
 
-          resolve(data);
-        }
-      });
-    })
+    const sql = `UPDATE studies 
+                 SET groupsecurity = ${groupValue} 
+                 WHERE apiClientId = ? 
+                 AND _id IN (${placeholders}) 
+                 AND isActive = 1`;
 
+    // Parameters: apiClientId followed by allStudyIds
+    const params = [apiClientId, ...allStudyIds];
 
-
+    const result = await executeDev7(sql, params);
+    return result;
   } catch (error) {
-    throw new Error("Oops! something went wrong!", error.message);
+    console.error("Error updating group surveys data:", error);
+    return [];
   }
 }
+
 
 
 async function upsertStudyisRouterEligible(studyIds) {
   try {
-   
- return new Promise(function (resolve, reject) {
-    let sql = `update studies set isRouterEligible = 1 where _id in ('${studyIds}') `;
-    queryWrapper.execute(sql, [], function (data) {
-      if (data.errno && data.errno !== undefined) {
-       resolve([])
-      } else {
-        
-        resolve(data);
-      }
-    });
-  })
+    if (!studyIds || studyIds.length === 0) return [];
 
+    // Prepare placeholders for parameterized query
+    const placeholders = studyIds.map(() => "?").join(",");
 
+    const sql = `UPDATE studies 
+                 SET isRouterEligible = 1 
+                 WHERE _id IN (${placeholders})`;
+
+    const result = await executeDev7(sql, studyIds);
+    return result;
   } catch (error) {
+    console.error("Error updating isRouterEligible:", error);
     return [];
   }
 }
 async function upsertIntoUnmappedqualification(unMappedSurveyIds, unMappedQuals, lang_Codes) {
   try {
+    if (!unMappedSurveyIds || unMappedSurveyIds.length === 0) return [];
+
     const clientId = 1;
     const dataBundle = [];
     const surveyMap = {};
@@ -308,92 +290,118 @@ async function upsertIntoUnmappedqualification(unMappedSurveyIds, unMappedQuals,
       surveyMap[surveyId].langCodes.push(langCode);
     }
 
-    // Prepare data bundle with joined qualifications and langCodes
+    // Prepare data bundle with joined qualifications and first langCode
     for (const surveyId in surveyMap) {
       const qualifications = surveyMap[surveyId].qualifications.join(',');
-      const langCodes = surveyMap[surveyId].langCodes[0];
-      dataBundle.push([`${surveyId}`, clientId, qualifications, langCodes, new Date()]);
+      const langCode = surveyMap[surveyId].langCodes[0];
+      dataBundle.push([`${surveyId}`, clientId, qualifications, langCode, new Date()]);
     }
 
-   
-    
-    
-   return new Promise(function (resolve, reject) {
-    let sql =  `
+    // Upsert using executeDev7
+    const sql = `
       INSERT INTO unmapped_api_quals (sid, cid, qualification_id, lang_code, created_at)
-        VALUES ? 
-        ON DUPLICATE KEY UPDATE 
+      VALUES ? 
+      ON DUPLICATE KEY UPDATE 
         qualification_id = VALUES(qualification_id),
         lang_code = VALUES(lang_code),
         created_at = VALUES(created_at)
     `;
-    queryWrapper.execute(sql, [dataBundle], function (data) {
-      if (data.errno && data.errno !== undefined) {
-       resolve([])
-      } else {
-        
-        resolve(data);
-      }
-    });
-  })
 
+    const result = await executeDev7(sql, [dataBundle]);
+    return result;
 
   } catch (error) {
-    return `Oops! Something went wrong: ${error.message}`;
+    console.error("Error in upsertIntoUnmappedqualification:", error);
+    return [];
   }
 }
+
 
 async function upsertIntoStudies(surveyData) {
   try {
-     return new Promise(function (resolve, reject) {
-    let sql = `INSERT INTO studies ( _id, studyName, description, orignalRequirment, firstPartyUrl, firstPartyUrlTest, fees, status, loi, ir, isActive,  apiType, country, apiClientId, apiSurveyId,surveyEndDate,device, isCountryCheck, EPC, isgroupsecurityactive, clientSurveyGUID, allowDemo, device_v2, isPIIActive,lucidClientName, lang_code,studytypes,isRouterEligible,clientType) VALUES ?  ON DUPLICATE KEY UPDATE orignalRequirment = VALUES(orignalRequirment), firstPartyUrl = VALUES(firstPartyUrl), fees = VALUES(fees), loi = VALUES(loi),ir = VALUES(ir), updatedAt = VALUES(updatedAt), status = VALUES(status), isActive = VALUES(isActive), device = VALUES(device), EPC = VALUES(EPC), isgroupsecurityactive = VALUES(isgroupsecurityactive), clientSurveyGUID = VALUES(clientSurveyGUID), allowDemo = VALUES(allowDemo), device_v2 = VALUES(device_v2), isPIIActive = VALUES(isPIIActive), lucidClientName = VALUES(lucidClientName), lang_code = VALUES(lang_code),isRouterEligible=VALUES(isRouterEligible),clientType = VALUES(clientType)`;
-    queryWrapper.execute(sql, [surveyData], function (data) {
-      if (data.errno && data.errno !== undefined) {
-       resolve([])
-      } else {
-        
-        resolve(data);
-      }
-    });
-  })
+    if (!surveyData || surveyData.length === 0) return [];
+
+    const sql = `
+      INSERT INTO studies 
+      (_id, studyName, description, orignalRequirment, firstPartyUrl, firstPartyUrlTest, fees, status, loi, ir, isActive, apiType, country, apiClientId, apiSurveyId, surveyEndDate, device, isCountryCheck, EPC, isgroupsecurityactive, clientSurveyGUID, allowDemo, device_v2, isPIIActive, lucidClientName, lang_code, studytypes, isRouterEligible, clientType)
+      VALUES ? 
+      ON DUPLICATE KEY UPDATE
+        orignalRequirment = VALUES(orignalRequirment),
+        firstPartyUrl = VALUES(firstPartyUrl),
+        fees = VALUES(fees),
+        loi = VALUES(loi),
+        ir = VALUES(ir),
+        updatedAt = NOW(),
+        status = VALUES(status),
+        isActive = VALUES(isActive),
+        device = VALUES(device),
+        EPC = VALUES(EPC),
+        isgroupsecurityactive = VALUES(isgroupsecurityactive),
+        clientSurveyGUID = VALUES(clientSurveyGUID),
+        allowDemo = VALUES(allowDemo),
+        device_v2 = VALUES(device_v2),
+        isPIIActive = VALUES(isPIIActive),
+        lucidClientName = VALUES(lucidClientName),
+        lang_code = VALUES(lang_code),
+        isRouterEligible = VALUES(isRouterEligible),
+        clientType = VALUES(clientType)
+    `;
+
+    const result = await executeDev7(sql, [surveyData]);
+    return result;
   } catch (error) {
-    throw new Error(`Oops Something went wrong: ${error.message}`);
+    console.error("Error upserting studies:", error);
+    return [];
   }
 }
 
 
+
 async function updateAllSurveyStatus(allSurveys, apiClientId) {
-  return new Promise(function (resolve, reject) {
-    var query = "UPDATE studies SET status = 'On Hold', isActive = 0 where apiSurveyId IN( ? ) AND apiClientId = ? AND isActive = 1";
-    queryWrapper.execute(query, [allSurveys, apiClientId], function (result) {
-      resolve(result);
-    });
-  });
+  try {
+    if (!allSurveys || allSurveys.length === 0) return [];
+
+    const sql = `
+      UPDATE studies 
+      SET status = 'On Hold', isActive = 0 
+      WHERE apiSurveyId IN (?) 
+      AND apiClientId = ? 
+      AND isActive = 1
+    `;
+
+    const result = await executeDev7(sql, [allSurveys, apiClientId]);
+    return result;
+  } catch (error) {
+    console.error("Error updating survey status:", error);
+    return [];
+  }
 }
 
- async function insertRecord(dataQuery,record) {
-    var isAvailable = [];
-    var data = {};
-    return new Promise(function (resolve, reject) {
-        var query = dataQuery;
-        queryWrapper.execute(query, [record], function (result) {
-            if (result.errno && result.errno !== undefined) {
-                data.result = false;
-                isAvailable.push(data);
-            } else {
-                if (result.length > 0) {
-                    data.result = true;
-                    data.studyData = result;
-                    isAvailable.push(data);
-                } else {
-                    data.result = false;
-                    isAvailable.push(data);
-                }
-            }
-            resolve(isAvailable);
-        });
-    });
+
+async function insertRecord(dataQuery, record) {
+  try {
+    const result = await executeDev7(dataQuery, [record]);
+
+    const data = {};
+    if (!result || result.errno) {
+      data.result = false;
+      return [data];
+    }
+
+    if (Array.isArray(result) && result.length > 0) {
+      data.result = true;
+      data.studyData = result;
+    } else {
+      data.result = false;
+    }
+
+    return [data];
+  } catch (error) {
+    console.error("Error in insertRecord:", error);
+    return [{ result: false }];
+  }
 }
+
 
 
   async function getAllApiSurveyFromDbStudies(country, apiClientType) {

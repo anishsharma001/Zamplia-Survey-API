@@ -1,24 +1,28 @@
 const { IpsosSupply } = require('./controller');
 
-module.exports = async function (context, req) {
+async function IpsosPulling(req,res) {
   try {
     // get lang-code from the request
-    const {lang_code} =  req.body || req.query;
+    const { lang_code } = req.query
 
 
     // Call the SurveyPulling function and pass the lang code
-    IpsosSupply( lang_code );
+    IpsosSupply(lang_code);
 
-    // Set the response
-    context.res = {
-      body: { success: true },
-    };
+    res.status(200).json({
+      status: 200,
+      message: 'Data processed successfully',
+
+    });
   } catch (error) {
     // Handle any errors that occur during the process
     console.error('Error:', error);
-    context.res = {
-      status: 500,
-      body: { success: false, message: error.message || error },
-    };
+    res.status(400).json({
+      status: 400,
+      message: 'Oops, something went wrong',
+      error
+    });
+
   }
-};
+}
+module.exports = { IpsosPulling };

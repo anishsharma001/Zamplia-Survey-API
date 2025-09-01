@@ -4,7 +4,7 @@ const { getIpsosAllSurveys, getAllAllocatedSurveys } = require('./services/Ipsos
 const { createIpsosSurveyBundle, createAllVendorDataBundle } = require('./operation');
 const { IpsosSurveyQualification } = require('./IpsosSurveyQualification');
 const { IpsosSurveyQuota } = require('./IpsosSurveyQuota');
-const difference = require('lodash.difference');
+const {difference} = require('lodash');
 
 
 async function IpsosSupply(lang_code) {
@@ -35,10 +35,10 @@ async function IpsosSupply(lang_code) {
     ]);
 
     // Process survey qualifications and quotas
-    await Promise.all([
-      IpsosSurveyQualification(surveyBundleData[0], allQualifications, allOptions, lang_code),
-      IpsosSurveyQuota(surveyBundleData[0], allQualifications, allOptions, lang_code)
-    ]);
+    
+      await IpsosSurveyQualification(surveyBundleData[0], allQualifications, allOptions, lang_code);
+      await IpsosSurveyQuota(surveyBundleData[0], allQualifications, allOptions, lang_code);
+    
 
   //  await vendorMapping(surveyBundleData[0]);
 

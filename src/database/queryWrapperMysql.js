@@ -113,3 +113,30 @@ exports.executeStaging = function (query, bindValuesArray, resultCallBack) {
     return;
   });
 };
+
+exports.executeDev7 = function (query, bindValuesArray) {
+  
+  return new Promise((resolve, reject) => {
+    mysql.pool.getConnection((err, connection) => {
+      if (err) {
+         createLoggoingInDevDb(query, bindValuesArray, err);
+          return reject(err);
+      }
+
+      if (connection) {
+        connection.query(query, bindValuesArray, function (error, resultData) {
+          
+          if (error) {
+           
+            reject(error);
+          }
+          if (resultData) {
+            resolve(resultData);
+          }
+        });
+
+        connection.release();
+      }
+    });
+  });
+};

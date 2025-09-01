@@ -165,13 +165,25 @@ catch(error){
 }
 
 async function updateAllSurveyStatus(allSurveys, apiClientId) {
-  return new Promise(function (resolve, reject) {
-    var query = "UPDATE studies SET status = 'On Hold', isActive = 0 where apiSurveyId IN( ? ) AND apiClientId = ? AND isActive = 1";
-    queryWrapper.execute(query, [allSurveys, apiClientId], function (result) {
-      resolve(result);
-    });
-  });
+  try {
+    if (!allSurveys || allSurveys.length === 0) return [];
+
+    const sql = `
+      UPDATE studies 
+      SET status = 'On Hold', isActive = 0 
+      WHERE apiSurveyId IN (?) 
+      AND apiClientId = ? 
+      AND isActive = 1
+    `;
+
+    const result = await executeDev7(sql, [allSurveys, apiClientId]);
+    return result;
+  } catch (error) {
+    console.error("Error updating survey status:", error);
+    return [];
+  }
 }
+
 
 module.exports = { getAllOptionsFromDb,
   getAllQualificationFromDb,

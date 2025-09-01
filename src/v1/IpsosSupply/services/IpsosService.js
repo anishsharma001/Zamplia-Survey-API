@@ -9,7 +9,7 @@ let token;
  */
 async function initializeToken() {
     try {
-        console.log('h');
+       
         token = await getIpsosToken();
         if (token.success === false) {
             throw new Error("Failed to retrieve token");
