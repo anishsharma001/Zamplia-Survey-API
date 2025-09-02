@@ -108,7 +108,7 @@ async function surveyPulling(lang_code, CPIGTE, CPILTE, LengthOfInterviewLTE, Co
     // Create survey bundle and vendor mapping bundle in parallel
 
     let surveyBundleData = await createSuveyBundle(allFilterSurveys, lang_code);
-    let vendorBundleData = await createAllVendorDataBundle(allFilterSurveys, lang_code);
+    // let vendorBundleData = await createAllVendorDataBundle(allFilterSurveys, lang_code);
 
     // Check for paused studies
     let allIncomingSurveyIds = [...new Set(surveyBundleData[2].map((x) => x[0]))];
@@ -133,7 +133,7 @@ async function surveyPulling(lang_code, CPIGTE, CPILTE, LengthOfInterviewLTE, Co
       await upsertStudiesDataAllowcational(surveyBundleData[1]);
       // upsertLucidGlobalSurveyDataAllowcational(surveyBundleData[4])
     }
-    upsertVendorData(vendorBundleData);
+    // upsertVendorData(vendorBundleData);
 
     // Pause surveys
     if (surveysToPause.length) {
