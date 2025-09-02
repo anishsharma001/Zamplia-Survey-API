@@ -1,4 +1,4 @@
-const { execute, executedev } = require('../../../database/queryWrapperMysql');
+const { execute, executeDev7 } = require('../../../database/queryWrapperMysql');
 const redis = require('../../../middlewares/redisClient');
 const meta = require('../../../config/meta.json');
 const {ApiClientId} = require('../utils/common');
@@ -30,14 +30,77 @@ async function getLangIdFromDb(lang_code) {
  * @param {Array} surveysData - The survey data to be upserted.
  */
 async function upsertStudiesData(surveysData) {
-  try{
-    const query = "INSERT INTO studies ( _id, studyName, description, orignalRequirment, firstPartyUrl, firstPartyUrlTest, fees, status, loi, ir, isActive,  apiType, country, lang_code, apiClientId, client, apiSurveyId,surveyEndDate, device, isCountryCheck, isgroupsecurityactive, allowDemo, isPIIActive, studytypes, isSampleChainReview, vendorSharedQuota, clientType, categoryId, lucidClientName, lucidClientConversion,isRouterEligible) VALUES ? ON DUPLICATE KEY UPDATE orignalRequirment = VALUES(orignalRequirment), firstPartyUrl = VALUES(firstPartyUrl), fees = VALUES(fees), loi = VALUES(loi),ir = VALUES(ir), updatedAt = VALUES(updatedAt), status = VALUES(status), isActive = VALUES(isActive), device = VALUES(device), EPC = VALUES(EPC), clientSurveyGUID = VALUES(clientSurveyGUID),isgroupsecurityactive = VALUES(isgroupsecurityactive), allowDemo = VALUES(allowDemo), isPIIActive = VALUES(isPIIActive), studytypes = VALUES(studytypes), categoryId = VALUES(categoryId), lucidClientName = VALUES(lucidClientName), lucidClientConversion = VALUES(lucidClientConversion),isRouterEligible=VALUES(isRouterEligible)";
-    const result = await execute(query, [surveysData]);
-    return result;
-  }catch(error){
-    throw new Error("oops SOmething went wrong, please contact to support!")
+  let initialBatchSize = 50;
+  let maxAttempts = 3;
+  const query = `
+    INSERT INTO studies (
+      _id, studyName, description, orignalRequirment, firstPartyUrl, firstPartyUrlTest, 
+      fees, status, loi, ir, isActive, apiType, country, lang_code, apiClientId, client, 
+      apiSurveyId, surveyEndDate, device, isCountryCheck, isgroupsecurityactive, allowDemo, 
+      isPIIActive, studytypes, isSampleChainReview, vendorSharedQuota, clientType, categoryId, 
+      lucidClientName, lucidClientConversion, isRouterEligible
+    ) VALUES ?
+    ON DUPLICATE KEY UPDATE
+      orignalRequirment = VALUES(orignalRequirment),
+      firstPartyUrl = VALUES(firstPartyUrl),
+      fees = VALUES(fees),
+      loi = VALUES(loi),
+      ir = VALUES(ir),
+      updatedAt = VALUES(updatedAt),
+      status = VALUES(status),
+      isActive = VALUES(isActive),
+      device = VALUES(device),
+      EPC = VALUES(EPC),
+      clientSurveyGUID = VALUES(clientSurveyGUID),
+      isgroupsecurityactive = VALUES(isgroupsecurityactive),
+      allowDemo = VALUES(allowDemo),
+      isPIIActive = VALUES(isPIIActive),
+      studytypes = VALUES(studytypes),
+      categoryId = VALUES(categoryId),
+      lucidClientName = VALUES(lucidClientName),
+      lucidClientConversion = VALUES(lucidClientConversion),
+      isRouterEligible = VALUES(isRouterEligible)
+  `;
+
+  // Sort rows by apiSurveyId to reduce deadlocks
+  surveysData.sort((a, b) => a[16] - b[16]);
+
+  let i = 0;
+  while (i < surveysData.length) {
+    let batchSize = initialBatchSize;
+    let attempts = 0;
+    let success = false;
+
+    while (!success && batchSize > 0 && attempts < maxAttempts) {
+      const chunk = surveysData.slice(i, i + batchSize);
+
+      try {
+        let data = await executeDev7(query, [chunk]);
+        success = true;
+        i += batchSize; // move to next batch
+      } catch (err) {
+        if (err.code === "ER_LOCK_DEADLOCK") {
+          attempts++;
+          batchSize = Math.floor(batchSize / 2) || 1; // halve batch size
+          const delay = 50 + Math.floor(Math.random() * 100); // random 50-150ms
+          console.warn(`Deadlock detected. Retry ${attempts}, new batch size ${batchSize}, delaying ${delay}ms`);
+          await new Promise(r => setTimeout(r, delay));
+        } else {
+          throw err; // other errors, rethrow
+        }
+      }
+    }
+
+    if (!success) {
+      throw new Error(`Failed to insert batch starting at index ${i} after ${maxAttempts} attempts`);
+    }
   }
+
+  return { status: "ok" };
 }
+
+
+
 
 async function upsertLucidGlobalSurveyData(surveyBulkData){
   try{
@@ -60,14 +123,73 @@ async function upsertLucidGlobalSurveyDataAllowcational(surveyBulkData){
 }
 
 async function upsertStudiesDataAllowcational(surveysData) {
-  try{
-    const query = "INSERT INTO studies ( _id, studyName, description, status, loi, ir, isActive,  apiType, country, lang_code, apiClientId, client, apiSurveyId,surveyEndDate, device, isCountryCheck, isgroupsecurityactive, allowDemo, isPIIActive, studytypes, isSampleChainReview, vendorSharedQuota, clientType, categoryId, lucidClientName, lucidClientConversion) VALUES ? ON DUPLICATE KEY UPDATE loi = VALUES(loi),ir = VALUES(ir), updatedAt = VALUES(updatedAt), status = VALUES(status), isActive = VALUES(isActive), device = VALUES(device), EPC = VALUES(EPC), clientSurveyGUID = VALUES(clientSurveyGUID),isgroupsecurityactive = VALUES(isgroupsecurityactive), allowDemo = VALUES(allowDemo), isPIIActive = VALUES(isPIIActive), studytypes = VALUES(studytypes), categoryId = VALUES(categoryId), lucidClientName = VALUES(lucidClientName), lucidClientConversion = VALUES(lucidClientConversion)";
-    const result = await execute(query, [surveysData]);
-    return result;
-  }catch(error){
-    throw new Error("oops SOmething went wrong, please contact to support!")
+  const initialBatchSize = 50; // start batch size
+  const maxAttempts = 3;       // max retry attempts per batch
+
+  const query = `
+    INSERT INTO studies (
+      _id, studyName, description, status, loi, ir, isActive, apiType, country, lang_code, 
+      apiClientId, client, apiSurveyId, surveyEndDate, device, isCountryCheck, isgroupsecurityactive, 
+      allowDemo, isPIIActive, studytypes, isSampleChainReview, vendorSharedQuota, clientType, 
+      categoryId, lucidClientName, lucidClientConversion
+    ) VALUES ?
+    ON DUPLICATE KEY UPDATE
+      loi = VALUES(loi),
+      ir = VALUES(ir),
+      updatedAt = VALUES(updatedAt),
+      status = VALUES(status),
+      isActive = VALUES(isActive),
+      device = VALUES(device),
+      EPC = VALUES(EPC),
+      clientSurveyGUID = VALUES(clientSurveyGUID),
+      isgroupsecurityactive = VALUES(isgroupsecurityactive),
+      allowDemo = VALUES(allowDemo),
+      isPIIActive = VALUES(isPIIActive),
+      studytypes = VALUES(studytypes),
+      categoryId = VALUES(categoryId),
+      lucidClientName = VALUES(lucidClientName),
+      lucidClientConversion = VALUES(lucidClientConversion)
+  `;
+
+  // Optional: sort by apiSurveyId to reduce deadlocks
+  surveysData.sort((a, b) => a[12] - b[12]);
+
+  let i = 0;
+
+  while (i < surveysData.length) {
+    let batchSize = initialBatchSize;
+    let attempts = 0;
+    let success = false;
+
+    while (!success && batchSize > 0 && attempts < maxAttempts) {
+      const chunk = surveysData.slice(i, i + batchSize);
+
+      try {
+        await executeDev7(query, [chunk]);
+        success = true;
+        i += batchSize;
+      } catch (err) {
+        if (err.code === "ER_LOCK_DEADLOCK") {
+          attempts++;
+          batchSize = Math.max(1, Math.floor(batchSize / 2));
+          const delay = 50 + Math.floor(Math.random() * 100);
+          console.warn(`Deadlock detected. Retry ${attempts}, batch size ${batchSize}, delaying ${delay}ms`);
+          await new Promise(r => setTimeout(r, delay));
+        } else {
+          console.error(err);
+          throw new Error("Oops! Something went wrong, please contact support.");
+        }
+      }
+    }
+
+    if (!success) {
+      throw new Error(`Failed to insert batch starting at index ${i} after ${maxAttempts} attempts`);
+    }
   }
+
+  return { status: "ok" };
 }
+
 
 /**
  * Retrieves vendor data from the database based on the vendor IDs.
