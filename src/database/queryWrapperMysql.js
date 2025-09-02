@@ -24,7 +24,7 @@ exports.execute = function (query, bindValuesArray) {
           return reject(error);
         }
  
-        resolve(resultData);
+        return resolve(resultData);
       });
     });
   });
@@ -111,5 +111,32 @@ exports.executeStaging = function (query, bindValuesArray, resultCallBack) {
       if (err) throw err;
     }
     return;
+  });
+};
+
+exports.executeDev7 = function (query, bindValuesArray) {
+  
+  return new Promise((resolve, reject) => {
+    mysql.pool.getConnection((err, connection) => {
+      if (err) {
+         createLoggoingInDevDb(query, bindValuesArray, err);
+          return reject(err);
+      }
+
+      if (connection) {
+        connection.query(query, bindValuesArray, function (error, resultData) {
+          
+          if (error) {
+           
+            reject(error);
+          }
+          if (resultData) {
+            resolve(resultData);
+          }
+        });
+
+        connection.release();
+      }
+    });
   });
 };

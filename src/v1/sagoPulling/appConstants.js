@@ -1,0 +1,10 @@
+// ALL CONSTANTS
+module.exports = Object.freeze({
+    MANUAL_CREATED_SURVEY_TYPE_ID: 0,
+    MCQ_SURVEY_TYPE_ID: 1,
+    PTWOSAMPLE_SURVEY_TYPE_ID: 2,
+    PRECISION_SURVEY_TYPE_ID: 3,
+    DYNATA_SURVEY_TYPE_ID: 7,
+    DEFAULT_SENDGRID_KEY: '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',
+    SURVEYS_FROM_STUDIES: { key: 'surveysFromStudies', expiry: 3 },
+});

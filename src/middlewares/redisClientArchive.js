@@ -4,7 +4,7 @@ const tls = require('tls');
 const asyncRedis = require('async-redis');
 const config = require('../config');
 
-const log4js = require('../common/logger');
+const log4js = require('../config/logger');
 const logger = log4js.getLogger('RedisClient');
 
 const queryWrapperArchive = require('../archiveData/database/queryWrapperMysql');

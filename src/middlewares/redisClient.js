@@ -3,7 +3,7 @@ const fs = require('fs');
 const tls = require('tls');
 const asyncRedis = require('async-redis');
 const config = require('../config/redisConfig');
-
+const queryWrapper  = require('../database/queryWrapperMysql')
 const log4js = require('../config/logger');
 const logger = log4js.getLogger('RedisClient');
 
@@ -143,38 +143,34 @@ function getData(cacheKey, query, queryParam = null, cacheKeyParam = null) {
 			// if data is not avilable in redis then hget data from database and cache the data in redis seever.				
 			if (redisResponse === null || redisResponse.length === 0) {
 				const tempValues = _values(queryParam);
-				//execute the query with supplied condition(if any) to fetch the data from DB 
-				const dbOutput = queryWrapper.execute(query, tempValues, async function (result) {
-					// remove unwanted properties from output
-					
-					if (result.errno && result.errno !== undefined) {
-						logger.error(`ERROR : ${result.sqlMessage}`);
-		
-						resolve(result);
-					}else{
 
-						const dbResponse = _map(result, dbValue =>
-							_omit(dbValue, ['updatedAt', 'deletedAt']),
-						);
-						logger.info("****************Response  from DB****************")
-						// set data in redis server.
-						await set(key, dbResponse);
+				try {
+					const result = await queryWrapper.execute(query, tempValues);
 
-						// set expiry timer in redis server key's
-						if(expiry===-1 || expiry ==='-1'){
-							logger.info(`No expiry key`)
-						}
-						else{
+					// remove unwanted properties
+					const dbResponse = _map(result, dbValue =>
+						_omit(dbValue, ['updatedAt', 'deletedAt'])
+					);
+
+					logger.info("**************** Response from DB ****************");
+
+					// set data in redis server
+					await set(key, dbResponse);
+
+					// set expiry timer in redis server key's
+					if (expiry === -1 || expiry === '-1') {
+						logger.info(`No expiry key`);
+					} else {
 						await redisClient.expire(key, expiry);
 					}
-						resolve(dbResponse);
-					}
-						
-					
 
-					// return data comming from database.
+					resolve(dbResponse); // or resolve(dbResponse) if inside a Promise
 
-				});
+				} catch (err) {
+					logger.error(`ERROR : ${err.sqlMessage || err.message}`);
+					return err; // or reject(err) if inside a Promise
+				}
+
 			}
 			else {
 				logger.info("****************Response  from Cache********************");
