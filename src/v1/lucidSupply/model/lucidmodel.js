@@ -385,7 +385,7 @@ async function upsertStudyDemoOrder(data) {
 async function InsertQuotaDataIntoDb(quotaData) {
   try {
     const query = `insert into constrainsts(sqid, clientQuotaId, studyId, type, title, totalQuota, requirement, isActive, createdAt, updatedAt, lang_code, apiUniqueQuotaId) values ? ON 
-      DUPLICATE KEY UPDATE  title=values(title), totalQuota=values(totalQuota), requirement=values(requirement), isActive = values(isActive), updatedAt=(updatedAt),lang_code=values(lang_code)`;
+      DUPLICATE KEY UPDATE  title=values(title), totalQuota=values(totalQuota), requirement=values(requirement), isActive = values(isActive), updatedAt=values(updatedAt),lang_code=values(lang_code)`;
     const responseData = await execute(query, [quotaData]);
     return responseData;
   } catch (error) {
