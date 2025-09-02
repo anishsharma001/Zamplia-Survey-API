@@ -29,19 +29,7 @@ config = {
 };
 
 
-// config = {
-//   mysql_pool : mysql.createPool({
-//       connectionLimit : 50,
-//       host: "64.202.188.184",  // ip address of server running mysql
-//       port:  "3306",
-//       user: "kuldeep",    // user name to your mysql database
-//       password: "kuldeep",
-//       database: "studyExchangeArchive", // use the specified database
-//       multipleStatements: true,
-//       ssl: true,
-//       stream:true,
-//     })
-// };
+
 
 
 module.exports = config;
