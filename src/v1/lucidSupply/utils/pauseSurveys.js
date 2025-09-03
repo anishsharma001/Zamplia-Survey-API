@@ -5,7 +5,7 @@ const { ApiClientId } = require('./common')
 async function pauseLucidSurveys ( surveyPauseData ){
     try{
 
-        let mappedStudyList = surveyPauseData.map(x => 'LD' + x);
+        // let mappedStudyList = surveyPauseData.map(x => 'LD' + x);
         updateAllSurveyStatus(surveyPauseData, ApiClientId);
     
         //MCQ

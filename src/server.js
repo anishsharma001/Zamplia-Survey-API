@@ -28,25 +28,25 @@ app.use("/api", allRoutes);
 process
   .on("unhandledRejection", (reason, p) => {
     let tableName = process.env.NODE_ENV == "production" ? `sqlerrorlogging` : `sqlerrorlogging_staging`;
-    let queryToInsert = `INSERT INTO ${tableName} (query, data, error) VALUES ?`;
+    let queryToInsert = `INSERT INTO ${tableName} (query, data, error,repo) VALUES ?`;
     let errorData = reason;
     if (reason.stack) {
       errorData = reason.stack;
     }
-    queryWrapperMysql.executedev(queryToInsert, [[["CodeError", "unhandledRejection", errorData]]], function (responseData) {
+    queryWrapperMysql.executedev(queryToInsert, [[["CodeError", "unhandledRejection", errorData, "zamplia_survey_api"]]], function (responseData) {
       console.error(reason, "Unhandled Rejection at Promise", p);
     });
   })
   .on("uncaughtException", (err) => {
     let tableName = process.env.NODE_ENV == "production" ? `sqlerrorlogging` : `sqlerrorlogging_staging`;
-    let queryToInsert = `INSERT INTO ${tableName} (query, data, error) VALUES ?`;
+    let queryToInsert = `INSERT INTO ${tableName} (query, data, error,repo) VALUES ?`;
 
     let errorData = err;
     if (err.stack) {
       errorData = err.stack;
     }
 
-    queryWrapperMysql.executedev(queryToInsert, [[["CodeError", "uncaughtException", errorData]]], function (responseData) {
+    queryWrapperMysql.executedev(queryToInsert, [[["CodeError", "uncaughtException", errorData,"zamplia_survey_api"]]], function (responseData) {
       console.error(err, "Uncaught Exception thrown");
     });
   });

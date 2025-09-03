@@ -30,7 +30,7 @@ async function getLangIdFromDb(lang_code) {
  * @param {Array} surveysData - The survey data to be upserted.
  */
 async function upsertStudiesData(surveysData) {
-  let initialBatchSize = 50;
+  let initialBatchSize = 200;
   let maxAttempts = 3;
   const query = `
     INSERT INTO studies (
@@ -123,7 +123,7 @@ async function upsertLucidGlobalSurveyDataAllowcational(surveyBulkData){
 }
 
 async function upsertStudiesDataAllowcational(surveysData) {
-  const initialBatchSize = 50; // start batch size
+  const initialBatchSize = 200; // start batch size
   const maxAttempts = 3;       // max retry attempts per batch
 
   const query = `
@@ -385,7 +385,7 @@ async function upsertStudyDemoOrder(data) {
 async function InsertQuotaDataIntoDb(quotaData) {
   try {
     const query = `insert into constrainsts(sqid, clientQuotaId, studyId, type, title, totalQuota, requirement, isActive, createdAt, updatedAt, lang_code, apiUniqueQuotaId) values ? ON 
-      DUPLICATE KEY UPDATE  title=values(title), totalQuota=values(totalQuota), requirement=values(requirement), isActive = values(isActive), updatedAt=(updatedAt),lang_code=values(lang_code)`;
+      DUPLICATE KEY UPDATE  title=values(title), totalQuota=values(totalQuota), requirement=values(requirement), isActive = values(isActive), updatedAt=values(updatedAt),lang_code=values(lang_code)`;
     const responseData = await execute(query, [quotaData]);
     return responseData;
   } catch (error) {
