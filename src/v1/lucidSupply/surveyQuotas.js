@@ -2,6 +2,7 @@ const { pauseUnAvailableQuotas, getAllInsertedQuotas, insertQuotaDemoIntoDb, Ins
 const { getQuotaFromLucid } = require("./services/lucidServices");
 const { batchPromises } = require("./operation");
 const { lucidSupplyLogs } = require("./lucidLogs");
+const {pauseLucidSurveys} = require("./utils/pauseSurveys");
 const { qualificationBundle } = require('./surveyQualification')
 const { upsertStudyDemoDb, upsertStudyisRouterEligible, upsertStudyDemoOrder, upsertDemoAgeIntoDb, upsertIntoUnmappedqualification } = require("./model/lucidmodel");
 /**
@@ -17,17 +18,22 @@ async function lucidSurveyQuota(surveyData, allDBQualificationData, allDbOptions
     const allSurveysQuota = [];
     const allSurveyIds = [];
     const allClientQuotaDatas = [];
-
+    const surveyToPause = [];
     const processQuotas = async (surveyIndex) => {
       try {
         const { 0: surveyId } = surveyIndex;
         allSurveyIds.push(surveyId);
         const clientQuotaData = await getQuotaFromLucid(surveyId);
         if (clientQuotaData.ResultCount > 1) {
-          allClientQuotaDatas.push(clientQuotaData);
-          const createQuotaBundle = await quotaBundle(clientQuotaData, lang_code, surveyData);
-          if (createQuotaBundle.length) {
-            allSurveysQuota.push(...createQuotaBundle);
+          const allTotalQuotaData = clientQuotaData.SurveyQuotas.filter((d) => d.SurveyQuotaType === "Total");
+          if (clientQuotaData.SurveyQuotas.length && allTotalQuotaData[0].NumberOfRespondents > 0) {
+            allClientQuotaDatas.push(clientQuotaData);
+            const createQuotaBundle = await quotaBundle(clientQuotaData, lang_code, surveyData);
+            if (createQuotaBundle.length) {
+              allSurveysQuota.push(...createQuotaBundle);
+            }
+          } else {
+            surveyToPause.push(surveyId);
           }
         }
       } catch (error) {
@@ -93,6 +99,10 @@ async function lucidSurveyQuota(surveyData, allDBQualificationData, allDbOptions
       }
       if (demoUnmaappedSurveyIds.length && demoUnmaappedQualIds.length && demosLangCode.length) {
         upsertIntoUnmappedqualification(demoUnmaappedSurveyIds, demoUnmaappedQualIds, demosLangCode);
+      }
+
+      if (surveyToPause.length) {
+        pauseLucidSurveys(surveyToPause);
       }
 
     }
