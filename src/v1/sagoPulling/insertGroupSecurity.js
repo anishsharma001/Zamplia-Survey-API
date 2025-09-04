@@ -1,67 +1,54 @@
-const request = require('request');
 const {insertRecord} = require('./comman');
 // const { deletePulledStudies } = require('../mcqCrons/comman');
 const { getSurveyGroupFromMcq} = require('./services');
 const { updateGroupSurveysData } = require('./comman');
 const _ = require('lodash');
 
-const getGroupsFromServer = async function (getURl, surveyId) {
-    return new Promise(function (resolve, reject) {
-        let url = getURl + surveyId;
-        let headers = {
-            'Content-Type': 'application/json',
-        };
+const getGroupsFromServer = async function (getURL, surveyId) {
+  let data = { success: false };
 
-        request.get({ url: url, headers: headers }, function (e, r, body) {
-            // your callback body
+  try {
+    const url = getURL + surveyId;
+    const headers = { 'Content-Type': 'application/json' };
 
-            let data = {};
-            data.success = false;
-            if (r !== undefined) {
-                if (r.statusCode === 200) {
-                    if (body) {
-                        let response = JSON.parse(body);
-                        let surveyID = response.SurveyId
-                        data.success = true;
-                        if (response.SurveyGroups != undefined && response.SurveyGroups.length > 0) {
-                            let allSurveysInGroup = [];
-                            for (let index in response.SurveyGroups) {
-                                let SurveyGroupSurveys = response.SurveyGroups[index].SurveyGroupSurveys;
-                                // SurveyGroupSurveys.map(i => 'MCQ' + i);
-                                for (let i = 0; i < SurveyGroupSurveys.length; i++) {
-                                    SurveyGroupSurveys[i] = "MCQ" + SurveyGroupSurveys[i];
-                                }
+    const response = await axios.get(url, { headers });
 
-                                allSurveysInGroup.push(SurveyGroupSurveys);
-                            }
+    if (response.status === 200 && response.data) {
+      const responseBody = response.data;
+      const surveyID = responseBody.SurveyId;
+      data.success = true;
 
-                            allSurveysInGroup = allSurveysInGroup.join();
+      if (responseBody.SurveyGroups && responseBody.SurveyGroups.length > 0) {
+        let allSurveysInGroup = [];
 
-                            let createRecordIntoDb = [];
-
-                            createRecordIntoDb.push(["MCQ" + surveyID, allSurveysInGroup, new Date(), new Date()])
-
-                            let queryDemo = `insert into  mcqgroupsurveys( surveyId, groupSurveys, 
-                                createdAt, updatedAt) values ? ON 
-                                DUPLICATE KEY UPDATE groupSurveys=values(groupSurveys) ,updatedAt=values(updatedAt)`;
-
-                            console.log(queryDemo);
-                            // _.map(createRecordIntoDb,(d) => deletePulledStudies(d[0]))
-                            insertRecord(queryDemo, createRecordIntoDb)
-                        }
-                        resolve(data);
-                    } else {
-                        resolve(data);
-                    }
-                } else {
-                    resolve(data);
-                }
-            } else {
-                resolve(data);
-            }
+        responseBody.SurveyGroups.forEach(group => {
+          let SurveyGroupSurveys = group.SurveyGroupSurveys.map(i => "MCQ" + i);
+          allSurveysInGroup.push(SurveyGroupSurveys);
         });
-    });
-}
+
+        allSurveysInGroup = allSurveysInGroup.join();
+
+        const createRecordIntoDb = [
+          ["MCQ" + surveyID, allSurveysInGroup, new Date(), new Date()]
+        ];
+
+        const queryDemo = `INSERT INTO mcqgroupsurveys(surveyId, groupSurveys, createdAt, updatedAt)
+          VALUES ? 
+          ON DUPLICATE KEY UPDATE groupSurveys=VALUES(groupSurveys), updatedAt=VALUES(updatedAt)`;
+
+        console.log(queryDemo);
+
+        await insertRecord(queryDemo, createRecordIntoDb);
+      }
+    }
+
+    return data;
+
+  } catch (error) {
+    console.error("Error fetching groups from server:", error.message || error);
+    return data;
+  }
+};
 
 async function createGroupSurveys(allSurveysData) {
     try {

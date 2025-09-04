@@ -1,39 +1,30 @@
-const request = require('request');
 const config = require('./config.js');
 const axios = require('axios');
 const upsertSurveyData = require('../dao/upsertSurveyData.js')
 
 module.exports.getUnimrktServeyFromServer = async function () {
-    return new Promise(async function (resolve, reject) {
-
-        var options = {
-            'method': 'GET',
-            'url': `${config.UNIMRKT_BASE_URL}`,
-            'headers': {
-                'accept': 'application/json',
-                'x-access-key': `${config.UNIMRKT_X_ACCESS_KEY}`,
-            }
-        };
-
-        request(options, function (error, response, body) {
-            let data = {};
-            if (error) {
-                data.success = false;
-                resolve(data);
-            } else {
-                data.success = false;
-                if (response.statusCode === 200) {
-                    let res = JSON.parse(body);
-                    data.success = true;
-                    data.surveys = res.surveys;
-                    resolve(data);
-                } else {
-                    resolve(data);
-                }
-            }
-        });
+  try {
+    const response = await axios.get(config.UNIMRKT_BASE_URL, {
+      headers: {
+        accept: 'application/json',
+        'x-access-key': config.UNIMRKT_X_ACCESS_KEY,
+      },
     });
-}
+
+    if (response.status === 200 && response.data) {
+      return {
+        success: true,
+        surveys: response.data.surveys,
+      };
+    }
+
+    return { success: false };
+
+  } catch (error) {
+    console.error('Error fetching Unimrkt surveys:', error.message || error);
+    return { success: false };
+  }
+};
 
 module.exports.getScreenerInfo = async function (id) {
     try {
@@ -82,29 +73,21 @@ module.exports.getQuotaInfo = async function (id) {
 };
 
 module.exports.getGroupInfo = async function (id, langCode) {
-    var options = {
-        'method': 'GET',
-        'url': `${config.UNIMRKT_BASE_URL}/${id}/groups`,
-        'headers': {
-            'accept': 'application/json',
-            'x-access-key': `${config.UNIMRKT_X_ACCESS_KEY}`,
-        }
-    };
-
-    request(options, function (error, response, body) {
-        if (error) {
-            return
-        } else {
-            if (response.statusCode === 200) {
-                let res = JSON.parse(body);
-                upsertSurveyData.upsertSurveyGroup(id, res.groups, langCode)
-                return
-            } else {
-                return
-            }
-        }
+  try {
+    const response = await axios.get(`${config.UNIMRKT_BASE_URL}/${id}/groups`, {
+      headers: {
+        accept: 'application/json',
+        'x-access-key': config.UNIMRKT_X_ACCESS_KEY,
+      },
     });
-}
+
+    if (response.status === 200 && response.data) {
+      await upsertSurveyData.upsertSurveyGroup(id, response.data.groups, langCode);
+    }
+  } catch (error) {
+    console.error(`Error fetching group info for survey ${id}:`, error.message || error);
+  }
+};
 
 module.exports.getUnimarktStat = async function (surveyId){
     try{
