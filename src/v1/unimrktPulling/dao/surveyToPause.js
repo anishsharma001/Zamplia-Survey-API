@@ -1,4 +1,3 @@
-var request = require('request');
 const {updateAllSurveyStatus} = require('./getDemosFromZamplia');
 const saveRecord = require('../../common/insertRecords');
 // const updateLucidStudies = require('../../LucidSyncV1/UpdateLucidStudies');

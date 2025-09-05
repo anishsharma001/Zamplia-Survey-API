@@ -1,5 +1,6 @@
-const mysql = require("mysql");
+// const mysql = require("mysql");
 const env = require('../config/env');
+const mysql = require("mysql2");
 let pool;
 
 if (process.env.NODE_ENV == "staging") {
@@ -11,7 +12,7 @@ if (process.env.NODE_ENV == "staging") {
     password: process.env.MYSQL_PASSWORD_STAGING,
     database: process.env.MYSQL_DATABASE_STAGING, // use the specified database
     multipleStatements: true,
-    ssl: true,
+    ssl: {},
   });
 } else {
   pool = mysql.createPool({
@@ -22,7 +23,7 @@ if (process.env.NODE_ENV == "staging") {
     password: process.env.MYSQL_PASSWORD,
     database: process.env.MYSQL_DATABASE, // use the specified database
     multipleStatements: true,
-    ssl: true,
+  ssl: {},
   });
 }
 
@@ -34,6 +35,7 @@ let devpool = mysql.createPool({
   password: process.env.MYSQL_PASSWORD_DEV,
   database: process.env.MYSQL_DATABASE_DEV,
   multipleStatements: true,
+  ssl: {},
 });
 
 let StagingPool = mysql.createPool({
@@ -44,6 +46,7 @@ let StagingPool = mysql.createPool({
   password: process.env.MYSQL_PASSWORD_STAGING,
   database: process.env.MYSQL_DATABASE_STAGING,
   multipleStatements: true,
+  ssl: {},
 });
 
 module.exports = {

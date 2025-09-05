@@ -1,51 +1,32 @@
 const mysql = require("./databaseSetupMysql");
 
-exports.execute = function (query, bindValuesArray) {
-  return new Promise((resolve, reject) => {
-    mysql.pool.getConnection((err, connection) => {
-      if (err) {
-        createLoggoingInDevDb(query, bindValuesArray, err);
-        return reject(err);
-      }
- 
-      if (!connection) {
-        return reject(new Error("No MySQL connection available"));
-      }
- 
-      const formattedQuery = formatQueryWithEscaping(query, bindValuesArray, connection);
-      console.log("Executing Query:", formattedQuery);
- 
-      connection.query(query, bindValuesArray, (error, resultData) => {
-        // release AFTER query finishes
-        connection.release();
- 
-        if (error) {
-          createLoggoingInDevDb(query, bindValuesArray, error);
-          return reject(error);
-        }
- 
-        return resolve(resultData);
-      });
-    });
-  });
+exports.execute = async function(query, bindValuesArray) {
+  try {
+    const [rows] = await mysql.pool.promise().query(query, bindValuesArray);
+    return rows;
+  } catch (error) {
+    createLoggoingInDevDb(query, bindValuesArray, error);
+    throw error;
+  }
 };
 
 async function createLoggoingInDevDb(query, data, error) {
-  return new Promise((resolve, reject) => {
-    mysql.devpool.getConnection(function (err, connection) {
-      if (err) {
-        resolve(err);
-      } else {
-        let tableName = process.env.NODE_ENV == "production" ? `sqlerrorlogging` : `sqlerrorlogging_staging`;
-        queryToInsert = `INSERT INTO ${tableName} (query, data, error) VALUES ?`;
-        let dataToInsert = [[[query, JSON.stringify(data), JSON.stringify(error)]]];
-        connection.query(queryToInsert, dataToInsert, function (error, resultData) {
-          console.log(resultData);
-          resolve(resultData);
-        });
-      }
-    });
-  });
+  try {
+    const tableName =
+      process.env.NODE_ENV === "production"
+        ? "sqlerrorlogging"
+        : "sqlerrorlogging_staging";
+
+    const insertQuery = `INSERT INTO ${tableName} (query, data, error,repo) VALUES (?, ?, ?,?)`;
+    const insertData = [query, JSON.stringify(data), JSON.stringify(error), "zamplia_survey_api"];
+
+    const [result] = await mysql.devpool.promise().query(insertQuery, insertData);
+    console.log("Logged error:", result);
+    return result;
+  } catch (err) {
+    console.error("Failed to log error:", err);
+    return err;
+  }
 }
 
 function formatQueryWithEscaping(query, values, connection) {
@@ -71,26 +52,20 @@ exports.executeQuery = function (query, bindValuesArray, resultCallBack) {
 
 exports.executedev = function (query, bindValuesArray, resultCallBack) {
   mysql.devpool.getConnection((err, connection) => {
-    console.log(err);
     if (err) {
+      console.error("Connection error:", err);
+      return resultCallBack(err);
     }
 
-    if (connection) {
-      connection.query(query, bindValuesArray, function (error, resultData) {
-        if (error) {
-          resultCallBack(error);
-        }
-        if (resultData) {
-          resultCallBack(resultData);
-        }
-      });
+    connection.query(query, bindValuesArray, (error, resultData) => {
+      connection.release(); // release AFTER query completes
 
-      connection.release();
-      if (err) throw err;
-    }
-    return;
+      if (error) return resultCallBack(error);
+      resultCallBack(null, resultData);
+    });
   });
 };
+
 
 exports.executeStaging = function (query, bindValuesArray, resultCallBack) {
   mysql.StagingPool.getConnection((err, connection) => {
@@ -114,29 +89,14 @@ exports.executeStaging = function (query, bindValuesArray, resultCallBack) {
   });
 };
 
-exports.executeDev7 = function (query, bindValuesArray) {
-  
-  return new Promise((resolve, reject) => {
-    mysql.pool.getConnection((err, connection) => {
-      if (err) {
-         createLoggoingInDevDb(query, bindValuesArray, err);
-          return reject(err);
-      }
 
-      if (connection) {
-        connection.query(query, bindValuesArray, function (error, resultData) {
-          
-          if (error) {
-           
-            reject(error);
-          }
-          if (resultData) {
-            resolve(resultData);
-          }
-        });
-
-        connection.release();
-      }
-    });
-  });
+exports.executeDev7 = async function(query, bindValuesArray) {
+  try {
+    const [rows] = await mysql.pool.promise().query(query, bindValuesArray);
+    return rows;
+  } catch (error) {
+    // Log the error to your dev DB
+    await createLoggoingInDevDb(query, bindValuesArray, error);
+    throw error;
+  }
 };

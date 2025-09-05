@@ -1,6 +1,4 @@
-
-
-var mysql = require('mysql');
+var mysql = require('mysql2');
 var config;
 
 config = {
@@ -12,7 +10,7 @@ config = {
         password: "Zamplia@Pr0jectX!",
         database: "zampliaarchiveddb", // use the specified database
         multipleStatements: true,
-        ssl: true
+        ssl: {}
       })
 };
 

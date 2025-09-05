@@ -18,6 +18,7 @@ const { lucidSurveyQuota } = require("./surveyQuotas");
 const {difference} = require("lodash");
 const { createGroupSurveys, createGroupSurveysAllocated } = require("./groupSurveys");
 const { lucidSupplyLogs } = require("./lucidLogs");
+const { lucidBuyers } = require("./utils/common");
 
 /**
  * Performs the survey pulling operation asynchronously.
@@ -45,9 +46,10 @@ async function surveyPulling(lang_code, CPIGTE, CPILTE, LengthOfInterviewLTE, Co
         obj.AccountName !== "Unimrkt Research" &&
         obj.AccountName !== "Schlesinger Group" &&
         obj.AccountName !== "Elicit Research" &&
-        obj.BidIncidence > 0 &&
-        obj.CollectsPII == false &&
-        (obj.CountryLanguageID == 9 ? obj.Conversion >= 4 : obj.Conversion >= 1)
+        obj.BidIncidence > 0 && lucidBuyers.includes(obj.AccountName) &&
+        obj.CollectsPII == false 
+        // &&
+        // (obj.CountryLanguageID == 9 ? obj.Conversion >= 4 : obj.Conversion >= 1)
 
         // (checkCompletes.length > 0 ||
         // (lucidLangId == 9 ? (obj.Conversion >= 10 && obj.CPI >= 0.9) : (obj.Conversion >= 10 && obj.CPI >= 0.9))
@@ -64,8 +66,9 @@ async function surveyPulling(lang_code, CPIGTE, CPILTE, LengthOfInterviewLTE, Co
         obj.AccountName !== "Unimrkt Research" &&
         obj.AccountName !== "Schlesinger Group" &&
         obj.AccountName !== "Elicit Research" &&
-        obj.CollectsPII == false &&
-        (obj.CountryLanguageID == 9 ? obj.Conversion >= 4 : obj.Conversion >= 1)
+        obj.CollectsPII == false &&  lucidBuyers.includes(obj.AccountName) 
+        // &&
+        // (obj.CountryLanguageID == 9 ? obj.Conversion >= 4 : obj.Conversion >= 1)
       );
     });
 

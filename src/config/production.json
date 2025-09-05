@@ -5,6 +5,7 @@
 		"redis": {
 			"client": "Zamplia.redis.cache.windows.net",
 			"authPass": "yNTxRxlQGH5inU8SYMXncS6BlA1SMnQs7Nvhdh5ashg=",
+			"host": "Zamplia.redis.cache.windows.net",
 			"port": "6380",
 			"tls": {
 				"key": "readCertFile",
