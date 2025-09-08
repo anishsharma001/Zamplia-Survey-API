@@ -4,44 +4,44 @@ const meta = require('../../config/meta.json');
 const redis = require('../../middlewares/redisClient');
 
 
-export async function getStudiesForArchiving(date) {
-    let query = 'select _id, s.* from studies as s where s.apiType=1 and  s.createdAt < DATE_SUB(?, INTERVAL 2 MONTH)';
-    let result = await executeDev7(query, [date]);
+export async function getStudiesForArchiving(limit) {
+    let query = 'select _id, s.* from studies as s where s.apiType=1 and  s.createdAt < DATE_SUB(NOW(), INTERVAL 2 MONTH) LIMIT ?';
+    let result = await executeDev7(query, [limit]);
     return result;
 }
 
-export async function getStudiesMappingForArchiving(date) {
-    let query = 'select s._id,m.* from studies as s left join mappings as m  on s._id = m.studyId where s.apiType=1 and s.createdAt < DATE_SUB(?, INTERVAL 2 MONTH);';
-    let result = await executeDev7(query, [date]);
+export async function getStudiesMappingForArchiving(sids) {
+    let query = 'select * from  mappings where studyId in(?)';
+    let result = await executeDev7(query, [sids]);
     return result;
 }
-export async function getStudiesDemoAgeMappingForArchiving(date) {
-    let query = 'select s._id,dm.* from studies as s left join demoagemapping as dm  on s._id=dm.studyId where s.apiType=1 and s.createdAt < DATE_SUB(?, INTERVAL 2 MONTH);';
-    let result = await executeDev7(query, [date]);
+export async function getStudiesDemoAgeMappingForArchiving(sids) {
+    let query = 'select * from demoagemapping as dm where dm.studyId in(?)';
+    let result = await executeDev7(query, [sids]);
     return result;
 }
-export async function getStudiesDemoMappingForArchiving(date) {
-    let query = 'select s._id,sdm.* from studies as s left join studydemomapping as sdm  on s._id=sdm.studyId where s.apiType=1 and s.createdAt < DATE_SUB(?, INTERVAL 2 MONTH);';
-    let result = await executeDev7(query, [date]);
+export async function getStudiesDemoMappingForArchiving(sids) {
+    let query = 'select * from studydemomapping as sdm where sdm.studyId in(?)';
+    let result = await executeDev7(query, [sids]);
     return result;
 }
-export async function getConstraintsForArchiving(date) {
-    let query = 'select s._id,c.* from studies as s left join constrainsts as c  on s._id=c.studyId where s.apiType=1 and s.createdAt < DATE_SUB(?, INTERVAL 2 MONTH);';
-    let result = await executeDev7(query, [date]);
+export async function getConstraintsForArchiving(sids) {
+    let query = 'select * from  constrainsts  where studyId in(?)';
+    let result = await executeDev7(query, [sids]);
     return result;
 }
-export async function getConstraintsDemoMappingForArchiving(date) {
-    let query = ' select s._id,cd.* from studies as s left join constrainstdemos as cd on s._id=cd.studyId where s.apiType=1 and s.createdAt < DATE_SUB(?, INTERVAL 2 MONTH);';
-    let result = await executeDev7(query, [date]);
+export async function getConstraintsDemoMappingForArchiving(sids) {
+    let query = ' select * from  constrainstdemos as cd where cd.studyId in(?)';
+    let result = await executeDev7(query, [sids]);
     return result;
 }
-export async function getStudiesStatusCountForArchiving(date) {
-    let query = 'select s._id,ssc.* from studies as s left join studies_status_count as ssc on s._id=ssc.studyId where s.apiType=1 and s.createdAt < DATE_SUB(?, INTERVAL 2 MONTH);';
-    let result = await executeDev7(query, [date]);
+export async function getStudiesStatusCountForArchiving(sids) {
+    let query = 'select * from  studies_status_count as ssc where ssc.studyId in(?)';
+    let result = await executeDev7(query, [sids]);
     return result;
 }
-export async function getStudiesStatusCountOnVendorsForArchiving(date) {
-    let query = 'select s._id,sscv.* from studies as s left join studies_status_count_on_vendor as sscv on s._id=sscv.studyId where s.apiType=1 and s.createdAt < DATE_SUB(?, INTERVAL 2 MONTH);';
-    let result = await executeDev7(query, [date]);
+export async function getStudiesStatusCountOnVendorsForArchiving(sids) {
+    let query = 'select * from  studies_status_count_on_vendor as sscv where sscv.studyId in(?)';
+    let result = await executeDev7(query, [sids]);
     return result;
 }
