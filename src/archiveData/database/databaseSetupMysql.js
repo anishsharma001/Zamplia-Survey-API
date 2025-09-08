@@ -1,9 +1,5 @@
-
-
-var mysql = require('mysql');
-var config;
-
-config = {
+const mysql = require('mysql2');
+const config = {
     mysql_pool : mysql.createPool({
         connectionLimit : 50,
         host: "zampliaarchiveddb.mysql.database.azure.com",  // ip address of server running mysql
@@ -12,7 +8,7 @@ config = {
         password: "Zamplia@Pr0jectX!",
         database: "zampliaarchiveddb", // use the specified database
         multipleStatements: true,
-        ssl: true
+        ssl: {}
       })
 };
 

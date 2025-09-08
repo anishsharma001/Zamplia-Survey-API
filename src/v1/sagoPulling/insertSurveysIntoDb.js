@@ -1,4 +1,3 @@
-const request = require('request');
 const getSurveys = require('./getMCQSurveysFromServer');
 const {difference} = require('lodash');
 const appConstants = require('../sagoPulling/appConstants');

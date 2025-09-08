@@ -1,42 +1,28 @@
-const request = require('request');
 const axios = require('axios');
 const mcqEndponts = require('./configs');
-module.exports.getMCQSurveysFromServer = async function (){
-   return new Promise(function(resolve, reject) {
-            let url = mcqEndponts.GET_SURVEYS;
+module.exports.getMCQSurveysFromServer = async function () {
+  try {
+    const url = mcqEndponts.GET_SURVEYS;
+    const headers = {
+      'Content-Type': 'application/json',
+      // 'X-MC-SUPPLY-KEY': '1129:ed9044a5-ef26-4a3d-a6db-5d2d39e10b4e'
+    };
 
-            // url = "https://api.sample-cube.com/api/v2/survey/supplier-surveys";
+    const response = await axios.get(url, { headers });
 
-            let headers = { 
-                'Content-Type' : 'application/json'
-                // 'X-MC-SUPPLY-KEY': '1129:ed9044a5-ef26-4a3d-a6db-5d2d39e10b4e'
-            };
+    let data = { success: false };
 
-            request.get({ url: url, headers: headers }, function (e, r, body) {
-                // your callback body
-                    if(e){
-                        let data = {};
-                        data.success = false;
-                        resolve(data);
-                    } else {
-                        let data = {};
-                        data.success = false;
-                        if(r.statusCode === 200){
-                            if(body){
-                                let response = JSON.parse(body);
-                                data.success = true;
-                                data.surveys = response.Surveys;
-                                resolve(data);
-                            } else {
-                                resolve(data);
-                            }
-                        } else {
-                            resolve(data);
-                        }
-                    }
-            });
-        });
-}
+    if (response.status === 200 && response.data) {
+      data.success = true;
+      data.surveys = response.data.Surveys;
+    }
+
+    return data;
+  } catch (error) {
+    // log error if needed
+    return { success: false };
+  }
+};
 
 
 module.exports.getMCQBuyerIdFromServer = async function () {
