@@ -5,7 +5,7 @@ const redis = require('../../middlewares/redisClient');
 
 
 export async function getStudiesForArchiving(date) {
-    let query = 'select _id, * from studies where apiType=1 and  createdAt < DATE_SUB(?, INTERVAL 2 MONTH)';
+    let query = 'select _id, s.* from studies as s where s.apiType=1 and  s.createdAt < DATE_SUB(?, INTERVAL 2 MONTH)';
     let result = await executeDev7(query, [date]);
     return result;
 }
