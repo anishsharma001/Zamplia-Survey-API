@@ -181,11 +181,11 @@ async function filterSurveys(surveys, isAllowSurvey, lucidBuyerList) {
         { list: lucidBuyerList.filter((item) => item.priority === 3), threshold: 5 },
         { list: lucidBuyerList.filter((item) => item.priority === 4), threshold: 7 },
         { list: lucidBuyerList.filter((item) => item.priority === 5), threshold: 9 },
-        { list: lucidBuyerList.filter((item) => item.priority === 6), threshold: 12 },
+        { list: lucidBuyerList.filter((item) => item.priority === 6), threshold: 10 },
         { list: lucidBuyerList.filter((item) => item.priority === 7), threshold: 15 },
-        { list: lucidBuyerList.filter((item) => item.priority === 8), threshold: 20 },
-        { list: lucidBuyerList.filter((item) => item.priority === 9), threshold: 20 },
-        { list: lucidBuyerList.filter((item) => item.priority === -1), threshold: 20 },
+        { list: lucidBuyerList.filter((item) => item.priority === 8), threshold: 15 },
+        { list: lucidBuyerList.filter((item) => item.priority === 9), threshold: 15 },
+        { list: lucidBuyerList.filter((item) => item.priority === -1), threshold: 15 },
       ];
     }
 
