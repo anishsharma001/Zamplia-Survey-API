@@ -1,70 +1,65 @@
 const { getStudiesForArchiving, getStudiesMappingForArchiving, getStudiesDemoMappingForArchiving, getStudiesDemoAgeMappingForArchiving, getConstraintsForArchiving, getConstraintsDemoMappingForArchiving, getStudiesStatusCountForArchiving, getStudiesStatusCountOnVendorsForArchiving, insertStudiesArchive, get_studies_already_archived, insertStudyDemoArchive, insertStudyDemoAgeArchive, insertConstraintsArchive, insertDemoConstraintsArchive, insertStudiesStatusCountArchive, insertMappingArchive, updateArchivedFlagInStudies, insertStudiesStatusCountOnVendorsArchive} = require('../dao');
-const { deleteStudiesForArchiving } = require('../utillisForDeleteData');
+const { deleteStudiesForArchiving,deleteStudiesAlreadyArchived,deleteStudiesMappingForArchiving,deleteStudiesDemoAgeMappingForArchiving,deleteStudiesDemoMappingForArchiving,deleteConstraintsForArchiving,deleteConstraintsDemoMappingForArchiving,deleteStudiesStatusCountForArchiving,deleteStudiesStatusCountOnVendorsForArchiving } = require('../utillisForDeleteData');
 
 
 async function archivingStudiesData(req, res) {
-   try {
+  try {
+    const limit = req.query.limit ? parseInt(req.query.limit) : 1000;
 
-    let limit = req.query.limit ? parseInt(req.query.limit) : 1000;
-    let studies_For_Archive = await getStudiesForArchiving(limit);  //done
-    let _id = studies_For_Archive.map(d => d._id);
-    let studies_already_archived = await get_studies_already_archived(_id);
-     let _id_for_delete = studies_already_archived.map(d => d._id); 
-    let mapping_For_Archive = await getStudiesMappingForArchiving(_id);   // done
-    let studydemo_For_Archive = await getStudiesDemoMappingForArchiving(_id); // done
-    let studydemo_age_For_Archive = await getStudiesDemoAgeMappingForArchiving(_id);
-    let constraints_For_Archive = await getConstraintsForArchiving(_id);
-    let demo_constraints_For_Archive = await getConstraintsDemoMappingForArchiving(_id);
-    let studies_status_count_For_Archive = await getStudiesStatusCountForArchiving(_id);
-    let studies_status_count_on_vendors_For_Archive = await getStudiesStatusCountOnVendorsForArchiving(_id);
+    const studies_For_Archive = await getStudiesForArchiving(limit);
+    if (!studies_For_Archive.length) return;
 
-    if(studies_already_archived.length){
-        await deleteStudiesForArchiving(_id_for_delete);
+    const ids = studies_For_Archive.map(({ _id }) => _id);
+    const [
+      studies_already_archived,
+      mapping_For_Archive,
+      studydemo_For_Archive,
+      studydemo_age_For_Archive,
+      constraints_For_Archive,
+      demo_constraints_For_Archive,
+      studies_status_count_For_Archive,
+      studies_status_count_on_vendors_For_Archive
+    ] = await Promise.all([
+      get_studies_already_archived(ids),
+      getStudiesMappingForArchiving(ids),
+      getStudiesDemoMappingForArchiving(ids),
+      getStudiesDemoAgeMappingForArchiving(ids),
+      getConstraintsForArchiving(ids),
+      getConstraintsDemoMappingForArchiving(ids),
+      getStudiesStatusCountForArchiving(ids),
+      getStudiesStatusCountOnVendorsForArchiving(ids)
+    ]);
+
+    if (studies_already_archived.length) {
+      const idsForDelete = studies_already_archived.map(({ _id }) => _id);
+      await deleteStudiesAlreadyArchived(idsForDelete);
     }
 
-    if(studies_For_Archive.length){
-        await insertStudiesArchive(studies_For_Archive);
-    }
-    
-    if(mapping_For_Archive.length){
-        await insertMappingArchive(mapping_For_Archive);
+    const archiveTasks = [
+      [studies_For_Archive, insertStudiesArchive, deleteStudiesForArchiving],
+      [mapping_For_Archive, insertMappingArchive, deleteStudiesMappingForArchiving],
+      [studydemo_For_Archive, insertStudyDemoArchive, deleteStudiesDemoMappingForArchiving],
+      [studydemo_age_For_Archive, insertStudyDemoAgeArchive, deleteStudiesDemoAgeMappingForArchiving],
+      [constraints_For_Archive, insertConstraintsArchive, deleteConstraintsForArchiving],
+      [demo_constraints_For_Archive, insertDemoConstraintsArchive, deleteConstraintsDemoMappingForArchiving],
+      [studies_status_count_For_Archive, insertStudiesStatusCountArchive, deleteStudiesStatusCountForArchiving],
+      [studies_status_count_on_vendors_For_Archive, insertStudiesStatusCountOnVendorsArchive, deleteStudiesStatusCountOnVendorsForArchiving]
+    ];
+
+    for (const [data, insertFn, deleteFn] of archiveTasks) {
+      if (data.length) {
+        await insertFn(data);
+        await deleteFn(ids);
+      }
     }
 
-    if(studydemo_For_Archive.length){
-        await insertStudyDemoArchive(studydemo_For_Archive);
-    }
-
-    if(studydemo_age_For_Archive.length){
-        await insertStudyDemoAgeArchive(studydemo_age_For_Archive);
-    }
-    
-    if(constraints_For_Archive.length){
-        await insertConstraintsArchive(constraints_For_Archive);
-    }
-
-    if(demo_constraints_For_Archive.length){
-        await insertDemoConstraintsArchive(demo_constraints_For_Archive);
-    }
-
-    if(studies_status_count_For_Archive.length){
-        await insertStudiesStatusCountArchive(studies_status_count_For_Archive);
-    }
-
-    if(studies_status_count_on_vendors_For_Archive.length){
-        await insertStudiesStatusCountOnVendorsArchive(studies_status_count_on_vendors_For_Archive);
-    }
- 
-     await updateArchivedFlagInStudies(_id);
-
-     return;
-    
-     
-
-} catch (errno) {
-    return
-    }
-
+    return;
+  } catch (err) {
+    console.error("Archiving error:", err);
+    return;
+  }
 }
+
 module.exports = {
     archivingStudiesData: archivingStudiesData
 }

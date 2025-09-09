@@ -1,8 +1,8 @@
 const { update } = require('lodash');
 const { executeDev7 } = require('../../database/queryWrapperMysql');
-
+// 
 async function getStudiesForArchiving(limit) {
-    let query = 'select  s.* from studies as s where s.apiType=1 and  s.createdAt < DATE_SUB(NOW(), INTERVAL 2 MONTH) LIMIT ?';
+    let query = `select  s.* from studies as s where s.apiType=1  and s.status != 'Live' and  s.createdAt < DATE_SUB(NOW(), INTERVAL 2 MONTH) LIMIT ?`;
     let result = await executeDev7(query, [limit]);
     return result;
 }
@@ -21,25 +21,25 @@ async function getStudiesMappingForArchiving(sids) {
 
 async function getStudiesDemoAgeMappingForArchiving(sids) {
     let query = 'select * from demoagemapping as dm where dm.studyId in(?)';
-    let result = await executeDev7(query, [sids]);
+    let result = await executeDev7(query, sids);
     return result;
 }
 
 async function getStudiesDemoMappingForArchiving(sids) {
     let query = 'select * from studydemomapping as sdm where sdm.studyId in(?)';
-    let result = await executeDev7(query, [sids]);
+    let result = await executeDev7(query, sids);
     return result;
 }
 
 async function getConstraintsForArchiving(sids) {
     let query = 'select * from constrainsts where studyId in(?)';
-    let result = await executeDev7(query, [sids]);
+    let result = await executeDev7(query, sids);
     return result;
 }
 
 async function getConstraintsDemoMappingForArchiving(sids) {
     let query = 'select * from constrainstdemos as cd where cd.studyId in(?)';
-    let result = await executeDev7(query, [sids]);
+    let result = await executeDev7(query, sids);
     return result;
 }
 
@@ -178,7 +178,9 @@ async function insertStudiesStatusCountArchive(statusCounts) {
         ON DUPLICATE KEY UPDATE ${updateColumns}
     `;
 
-    return await executeDev7(query, values);
+   
+   let data= await executeDev7(query, values);
+   return
 }
 
 async function insertStudiesStatusCountOnVendorsArchive(statusCounts) {
@@ -201,7 +203,8 @@ async function insertStudiesStatusCountOnVendorsArchive(statusCounts) {
         ON DUPLICATE KEY UPDATE ${updateColumns}
     `;
 
-    return await executeDev7(query, values);
+    let data= await executeDev7(query, values);
+     return data;
 }
 
 async function updateArchivedFlagInStudies(sids) {

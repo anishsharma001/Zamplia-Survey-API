@@ -4,7 +4,12 @@ const { executeDev7 } = require('../../database/queryWrapperMysql');
 
 
 async function deleteStudiesForArchiving(sids) {
-    let query = 'delete from studies where apiType=1 and id in (?)';
+    let query = 'delete from studies where apiType=1 and _id in (?)';
+    let result = await executeDev7(query, [sids]);
+    return result;
+}
+async function deleteStudiesAlreadyArchived(sids) {
+    let query = 'delete from studies_backup where apiType=1 and _id in (?)';
     let result = await executeDev7(query, [sids]);
     return result;
 }
@@ -52,6 +57,7 @@ async function deleteStudiesStatusCountOnVendorsForArchiving(sids) {
 }
 
 module.exports = {
+    deleteStudiesAlreadyArchived,
     deleteStudiesForArchiving,
     deleteStudiesMappingForArchiving,
     deleteStudiesDemoAgeMappingForArchiving,
