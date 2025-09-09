@@ -25,6 +25,20 @@ async function getLangIdFromDb(lang_code) {
   }
 }
 
+async function getlucidBuyerListFromDb() {
+  try {
+    const query = 'SELECT buyername, priority FROM lucid_buyer_name_priority';
+    const result = await execute(query, []);
+    if (result.length) {
+      return result ;
+    } else {
+      return [] 
+    }
+  } catch (error) {
+    return [] 
+  }
+}
+
 /**
  * Upserts survey data into the database.
  * @param {Array} surveysData - The survey data to be upserted.
@@ -619,8 +633,19 @@ async function upsertIntoUnmappedqualification(unMappedSurveyIds, unMappedQuals,
   }
 }
 
+  async function insertBuyerList(list) {
+  try {
+    // SELECT buyername, priority FROM lucid_buyer_name_priority
+    const query = `insert into lucid_buyer_name_priority(buyername, priority) values ?`
+    const result = await execute(query, [list]);
+    return result;
+  } catch (error) {
+    throw new Error(`Oops Something went wrong: ${error.message}`);
+  }
+}
+
 module.exports = { insertlogs, getLangIdFromDb, getVendorData, getAllOptionsFromDb,pauseQualficationNotMatchSurvey,upsertLucidGlobalSurveyDataAllowcational,
   getAllLiveSurveyFromDb, updateAllSurveyStatus, getAllQualificationFromDb, excuteQuery,upsertVendorData,pauseUnAvailableQuotas,
   upsertStudyDemoDb, upsertDemoAgeIntoDb, upsertStudiesData, getAllInsertedQuotas, InsertQuotaDataIntoDb , upsertLucidGlobalSurveyData,
   updateGroupSurveysData, getExistingGroupSecurityID,updateGroupSecurity , insertQuotaDemoIntoDb, upsertStudyDemoOrder, lucidLogsEnable, insertLucidLogging, upsertStudiesDataAllowcational,
-  filterLiveAllocatedSurveys, upsertStudyisRouterEligible, logsUnMappedQualData, upsertGlobaleDemoDB,upsertIntoUnmappedqualification};
+  filterLiveAllocatedSurveys, upsertStudyisRouterEligible, logsUnMappedQualData, upsertGlobaleDemoDB,upsertIntoUnmappedqualification, getlucidBuyerListFromDb, insertBuyerList};

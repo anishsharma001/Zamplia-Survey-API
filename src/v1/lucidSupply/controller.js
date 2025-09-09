@@ -1,5 +1,6 @@
 const {
   getLangIdFromDb,
+  getlucidBuyerListFromDb,
   getAllLiveSurveyFromDb,
   getAllQualificationFromDb,
   upsertLucidGlobalSurveyDataAllowcational,
@@ -9,6 +10,7 @@ const {
   upsertStudiesDataAllowcational,
   upsertLucidGlobalSurveyData,
   filterLiveAllocatedSurveys,
+  insertBuyerList
 } = require("./model/lucidmodel");
 const { getLucidAllSurveys, getAllAllocatedSurveys, getallAiCategories } = require("./services/lucidServices");
 const { pauseLucidSurveys } = require("./utils/pauseSurveys");
@@ -18,13 +20,15 @@ const { lucidSurveyQuota } = require("./surveyQuotas");
 const {difference} = require("lodash");
 const { createGroupSurveys, createGroupSurveysAllocated } = require("./groupSurveys");
 const { lucidSupplyLogs } = require("./lucidLogs");
-const { lucidBuyers } = require("./utils/common");
-
 /**
  * Performs the survey pulling operation asynchronously.
  * @param {string} lang_code - The language code used for the survey pulling.
  * @returns {Promise<Object>} A Promise that resolves when the survey pulling is completed successfully, or rejects with an error.
  */
+
+
+
+
 async function surveyPulling(lang_code, CPIGTE, CPILTE, LengthOfInterviewLTE, ConversionGTE, OverallCompletesGTE, TerminationLengthOfInterviewLTE, TotalRemaining) {
   try {
     // Get lucid country id from the database by lang code
@@ -37,43 +41,12 @@ async function surveyPulling(lang_code, CPIGTE, CPILTE, LengthOfInterviewLTE, Co
 
     let getAllocatedSurveys = await getAllAllocatedSurveys(lucidLangId);
     // let completeData = await getCompletesOfLucidLink(lang_code);
-
-    allLiveSurveys = allLiveSurveys.filter((obj) => {
-      // let checkCompletes = completeData.filter(data => data.refid == obj.SurveyNumber);
-      obj.isAllowSurvey = 0;
-      return (
-        obj.AccountName !== "Logit" &&
-        obj.AccountName !== "Unimrkt Research" &&
-        obj.AccountName !== "Schlesinger Group" &&
-        obj.AccountName !== "Elicit Research" &&
-        obj.BidIncidence > 0 && lucidBuyers.includes(obj.AccountName) &&
-        obj.CollectsPII == false 
-        // &&
-        // (obj.CountryLanguageID == 9 ? obj.Conversion >= 4 : obj.Conversion >= 1)
-
-        // (checkCompletes.length > 0 ||
-        // (lucidLangId == 9 ? (obj.Conversion >= 10 && obj.CPI >= 0.9) : (obj.Conversion >= 10 && obj.CPI >= 0.9))
-        // )
-        // && (obj.AccountName == "Gazelle" ? obj.TotalRemaining > 10 : obj.TotalRemaining > 50)
-        // && obj.SurveyGroupExists == 0
-      );
-    });
-
-    getAllocatedSurveys = getAllocatedSurveys.filter((obj) => {
-      obj.isAllowSurvey = 1;
-      return (
-        obj.AccountName !== "Logit" &&
-        obj.AccountName !== "Unimrkt Research" &&
-        obj.AccountName !== "Schlesinger Group" &&
-        obj.AccountName !== "Elicit Research" &&
-        obj.CollectsPII == false &&  lucidBuyers.includes(obj.AccountName) 
-        // &&
-        // (obj.CountryLanguageID == 9 ? obj.Conversion >= 4 : obj.Conversion >= 1)
-      );
-    });
+    const lucidBuyerList = await getlucidBuyerListFromDb();
+    allLiveSurveys = await filterSurveys(allLiveSurveys, 0, lucidBuyerList);
+    getAllocatedSurveys = await filterSurveys(getAllocatedSurveys, 1, lucidBuyerList);
 
     let allFilterSurveys = [...allLiveSurveys, ...getAllocatedSurveys];
-    if (!allFilterSurveys.length) {
+    if (allFilterSurveys.length) {
       return { success: true };
     }
     // function extractTimestamp(dateString) {
@@ -194,4 +167,92 @@ async function getCompletesOfLucidLink(lang_Code) {
   });
 }
 
+async function filterSurveys(surveys, isAllowSurvey, lucidBuyerList) {
+  try {
+    const excludedAccounts = ["Logit", "Unimrkt Research", "Schlesinger Group", "Elicit Research", "SAGO"];
+    
+    let buyerListsConfig = [];
+    let buyerNeedToInsert = [];
+
+    if (lucidBuyerList.length) {
+      buyerListsConfig = [
+        { list: lucidBuyerList.filter((item) => item.priority === 1), threshold: 0 },
+        { list: lucidBuyerList.filter((item) => item.priority === 2), threshold: 2 },
+        { list: lucidBuyerList.filter((item) => item.priority === 3), threshold: 5 },
+        { list: lucidBuyerList.filter((item) => item.priority === 4), threshold: 7 },
+        { list: lucidBuyerList.filter((item) => item.priority === 5), threshold: 9 },
+        { list: lucidBuyerList.filter((item) => item.priority === 6), threshold: 10 },
+        { list: lucidBuyerList.filter((item) => item.priority === 7), threshold: 15 },
+        { list: lucidBuyerList.filter((item) => item.priority === 8), threshold: 15 },
+        { list: lucidBuyerList.filter((item) => item.priority === 9), threshold: 15 },
+        { list: lucidBuyerList.filter((item) => item.priority === -1), threshold: 15 },
+      ];
+    }
+
+    // Instead of filter(async ...)
+    const results = await Promise.all(
+      surveys.map(async (obj) => {
+        obj.isAllowSurvey = isAllowSurvey;
+
+        let shouldSelectSurveyBool = { isSelected: false, accountName: false };
+        if (buyerListsConfig.length) {
+          shouldSelectSurveyBool = await shouldSelectSurvey(obj, buyerListsConfig);
+        } else {
+          shouldSelectSurveyBool.isSelected =
+            obj.CountryLanguageID === 9 ? obj.Conversion >= 3 : obj.Conversion >= 1;
+        }
+
+        if (shouldSelectSurveyBool?.accountName) {
+          if (!buyerNeedToInsert.flat().includes(shouldSelectSurveyBool.accountName)){
+            buyerNeedToInsert.push([shouldSelectSurveyBool.accountName, 9]);// priority 9 means new entry
+          }
+        }
+
+        const isValid = !excludedAccounts.includes(obj.AccountName) &&
+          obj.CollectsPII === false &&
+          (isAllowSurvey === 0 ? obj.BidIncidence > 0 : true) &&
+          shouldSelectSurveyBool.isSelected;
+
+        return isValid ? obj : null;
+      })
+    );
+
+    if (buyerNeedToInsert.length) {
+      await insertBuyerList(buyerNeedToInsert);
+    }
+
+    // filter out nulls
+    return results.filter((item) => item !== null);
+
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+async function shouldSelectSurvey(obj, buyerListsConfig) {
+  
+  const accountName = obj.AccountName;
+  const isCountryLanguage9 = obj.CountryLanguageID === 9;
+    
+  // Check each buyer list
+  for (const { list, threshold } of buyerListsConfig) {
+    if (list.length && list[0].priority === -1) {
+      return { isSelected: false, accountName: '' };
+    }
+    let listVal = list.map(item => item.buyername);
+    if (listVal.includes(accountName)) {
+      let isSelected = isCountryLanguage9 ? obj.Conversion >= threshold : obj.Conversion >= 1
+      let objv = {isSelected: isSelected, accountName: ''}
+      return objv
+    }
+  }
+
+  
+  let isSelected = isCountryLanguage9 ? obj.Conversion >= 20 : obj.Conversion >= 1
+  // If not in any buyer list, check for CountryLanguageID 9 with Conversion >= 20
+  let obj1 = {isSelected: isSelected , accountName: accountName};
+  return obj1
+}
+
 module.exports = { surveyPulling };
+ 
