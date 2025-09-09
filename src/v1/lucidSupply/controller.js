@@ -46,7 +46,7 @@ async function surveyPulling(lang_code, CPIGTE, CPILTE, LengthOfInterviewLTE, Co
     getAllocatedSurveys = await filterSurveys(getAllocatedSurveys, 1, lucidBuyerList);
 
     let allFilterSurveys = [...allLiveSurveys, ...getAllocatedSurveys];
-    if (allFilterSurveys.length) {
+    if (!allFilterSurveys.length) {
       return { success: true };
     }
     // function extractTimestamp(dateString) {
