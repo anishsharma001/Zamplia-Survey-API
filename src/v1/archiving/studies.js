@@ -3,6 +3,7 @@ async function archivingStudies(req, res) {
     try {
 
         archivingStudiesData(req,res);
+        res.status(200).json({ success: true });
 
     } catch (error) {
         res.status(500).json({ success: false, message: error.message || error });
