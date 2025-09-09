@@ -33,7 +33,7 @@ async function deleteStudiesDemoMappingForArchiving(sids) {
 }
 
 async function deleteConstraintsForArchiving(sids) {
-    let query = 'delete from constraints where studyId in(?)';
+    let query = 'delete from constrainsts where studyId in(?)';
     let result = await executeDev7(query, [sids]);
     return result;
 }
