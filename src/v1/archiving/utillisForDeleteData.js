@@ -4,8 +4,11 @@ const { executeDev7 } = require('../../database/queryWrapperMysql');
 
 
 async function deleteStudiesForArchiving(sids) {
-    let query = 'delete from studies where apiType=1 and _id in (?)';
-    let result = await executeDev7(query, [sids]);
+    let deleteLogsQuery = 'DELETE FROM logs_for_email WHERE studyId IN (?)';
+    await executeDev7(deleteLogsQuery, [sids]);
+    let deleteStudiesQuery = 'DELETE FROM studies WHERE apiType=1 AND _id IN (?)';
+    let result = await executeDev7(deleteStudiesQuery, [sids]);
+
     return result;
 }
 async function deleteStudiesAlreadyArchived(sids) {
