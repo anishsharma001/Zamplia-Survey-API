@@ -59,6 +59,24 @@ async function deleteStudiesStatusCountOnVendorsForArchiving(sids) {
     return result;
 }
 
+    async function deleteParticipantsForArchiving(pids) {
+        let query = 'delete from participants where p_id in(?)';
+        let result = await executeDev7(query, [pids]);
+        return result;
+    }
+
+    async function deleteUserEntryDetailForArchiving(params) {
+        let query = 'delete from user_entry_detail where ID in(?)';
+        let result = await executeDev7(query, [params]);
+        return result;
+    }
+
+ async function deleteSurveyParticipantForArchiving() {
+        let query = 'delete from survey_participant where p_id in(?)';
+        let result = await executeDev7(query, [params]);
+        return result;
+    }
+
 module.exports = {
     deleteStudiesAlreadyArchived,
     deleteStudiesForArchiving,
@@ -68,5 +86,8 @@ module.exports = {
     deleteConstraintsForArchiving,
     deleteConstraintsDemoMappingForArchiving,
     deleteStudiesStatusCountForArchiving,
-    deleteStudiesStatusCountOnVendorsForArchiving
+    deleteStudiesStatusCountOnVendorsForArchiving,
+    deleteParticipantsForArchiving,
+    deleteUserEntryDetailForArchiving,
+    deleteSurveyParticipantForArchiving
 };
