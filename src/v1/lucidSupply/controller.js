@@ -177,11 +177,11 @@ async function filterSurveys(surveys, isAllowSurvey, lucidBuyerList) {
     if (lucidBuyerList.length) {
       buyerListsConfig = [
         { list: lucidBuyerList.filter((item) => item.priority === 1), threshold: 0 },
-        { list: lucidBuyerList.filter((item) => item.priority === 2), threshold: 2 },
-        { list: lucidBuyerList.filter((item) => item.priority === 3), threshold: 5 },
-        { list: lucidBuyerList.filter((item) => item.priority === 4), threshold: 7 },
-        { list: lucidBuyerList.filter((item) => item.priority === 5), threshold: 9 },
-        { list: lucidBuyerList.filter((item) => item.priority === 6), threshold: 10 },
+        { list: lucidBuyerList.filter((item) => item.priority === 2), threshold: 0 },
+        { list: lucidBuyerList.filter((item) => item.priority === 3), threshold: 0 },
+        { list: lucidBuyerList.filter((item) => item.priority === 4), threshold: 0 },
+        { list: lucidBuyerList.filter((item) => item.priority === 5), threshold: 14 },
+        { list: lucidBuyerList.filter((item) => item.priority === 6), threshold: 14 },
         { list: lucidBuyerList.filter((item) => item.priority === 7), threshold: 15 },
         { list: lucidBuyerList.filter((item) => item.priority === 8), threshold: 15 },
         { list: lucidBuyerList.filter((item) => item.priority === 9), threshold: 15 },
@@ -236,6 +236,11 @@ async function shouldSelectSurvey(obj, buyerListsConfig) {
     
   // Check each buyer list
   for (const { list, threshold } of buyerListsConfig) {
+
+    if(threshold === 0 && obj.LengthOfInterview > 0) {
+      return { isSelected: false, accountName: '' };
+    }
+
     if (list.length && list[0].priority === -1) {
       return { isSelected: false, accountName: '' };
     }
