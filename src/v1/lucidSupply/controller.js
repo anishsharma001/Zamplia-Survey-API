@@ -208,18 +208,11 @@ async function filterSurveys(surveys, isAllowSurvey, lucidBuyerList) {
           }
         }
 
-        let isValid = !excludedAccounts.includes(obj.AccountName) &&
+        const isValid = !excludedAccounts.includes(obj.AccountName) &&
           obj.CollectsPII === false &&
           (isAllowSurvey === 0 ? obj.BidIncidence > 0 : true) &&
           (obj.RPI && obj.RPI.value > '0.90') &&
           shouldSelectSurveyBool.isSelected;
-
-        
-
-        if (obj.AccountName == 'Innovate MR') {
-          console.log('l');
-          
-        }
 
         return isValid ? obj : null;
       })
