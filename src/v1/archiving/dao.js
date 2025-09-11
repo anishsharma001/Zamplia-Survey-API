@@ -221,23 +221,25 @@ async function getParticipantsForArchiving(limit) {
 
 }
 
+async function get_participants_already_archived(participant_ids) {
+    let query = 'Select p_id from participants_backup where p_id in (?)';
+    let result = await executeDev7(query, [participant_ids]);
+    return result;  
+}
+
 async function getUserEntryDetailData(limit) {
-    let query = 'Select * from user_entry_detail where createdAt < DATE_SUB(NOW(), INTERVAL 6 MONTH) LIMIT ?';
+    let query = 'Select * from userentrydetails where createdAt < DATE_SUB(NOW(), INTERVAL 6 MONTH) LIMIT ?';
     let result = await executeDev7(query, [limit]);
     return result;
 }
 
 async function getSurveyParticipantData(limit) {
-    let query = 'Select * from survey_participant where createdAt < DATE_SUB(NOW(), INTERVAL 6 MONTH) LIMIT ?';
+    let query = 'Select * from survey_participants where created_at < DATE_SUB(NOW(), INTERVAL 6 MONTH) LIMIT ?';
     let result = await executeDev7(query, [limit]);
     return result;
 }
 
-async function getParticipantsForArchiving(limit) {
-    let query = 'Select * from participants where createdAt < DATE_SUB(NOW(), INTERVAL 6 MONTH) LIMIT ?';
-    let result = await executeDev7(query, [limit]);
-    return result;
-}
+
 
 async function insertParticipantsArchive(participants) {  
 
@@ -245,7 +247,7 @@ async function insertParticipantsArchive(participants) {
 
     const columns = Object.keys(participants[0]);
 
-    const placeholders = studies
+    const placeholders = participants
         .map(() => `(${columns.map(() => '?').join(',')})`)
         .join(',');
     const values = participants.flatMap(participant => columns.map(col => participant[col]));
@@ -266,7 +268,7 @@ async function insertParticipantsArchive(participants) {
 
     const values = userEntryDetails.flatMap(detail => columns.map(col => detail[col]));
 
-    const query = `INSERT INTO userentrydetails_backup (${columns.join(',')}) VALUES ${placeholders}`;
+    const query = `INSERT INTO userentrydetailsarchive (${columns.join(',')}) VALUES ${placeholders}`;
 
     let data = await executeDev7(query, values);
     return data;
@@ -275,6 +277,21 @@ async function insertParticipantsArchive(participants) {
 
 async function insertSurveyParticipantArchive(surveyParticipants) {  
     if (!surveyParticipants || surveyParticipants.length === 0) return; 
+ const columns = Object.keys(surveyParticipants[0]).filter(col => col !== 'id');
+
+    const placeholders = surveyParticipants
+        .map(() => `(${columns.map(() => '?').join(',')})`)
+        .join(',');
+
+    const values = surveyParticipants.flatMap(detail => columns.map(col => detail[col]));
+
+    const query = `INSERT INTO survey_participants_backup (${columns.join(',')}) VALUES ${placeholders}`;
+
+    let data = await executeDev7(query, values);
+    return data;
+
+
+
 }
 
 
@@ -303,5 +320,6 @@ module.exports = {
     getSurveyParticipantData,
     insertParticipantsArchive,
     insertUserEntryDetailArchive,
-    insertSurveyParticipantArchive
+    insertSurveyParticipantArchive,
+    get_participants_already_archived
 };

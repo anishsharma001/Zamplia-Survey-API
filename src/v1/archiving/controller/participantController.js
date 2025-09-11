@@ -1,5 +1,5 @@
-const { getParticipantsForArchiving, insertParticipantsArchive, insertUserEntryDetailArchive, insertSurveyParticipantArchive, getUserEntryDetailData, getSurveyParticipantData } = require('../dao');
-const { deleteParticipantsForArchiving, deleteUserEntryDetailForArchiving, deleteSurveyParticipantForArchiving } = require('../utillisForDeleteData');
+const { getParticipantsForArchiving, insertParticipantsArchive, insertUserEntryDetailArchive, insertSurveyParticipantArchive, getUserEntryDetailData, getSurveyParticipantData, get_participants_already_archived } = require('../dao');
+const { deleteParticipantsForArchiving, deleteUserEntryDetailForArchiving, deleteSurveyParticipantForArchiving ,deleteAlreadyArchivedParticipants} = require('../utillisForDeleteData');
 
 
 async function archivingParticipantsData(req, res) {
@@ -23,7 +23,12 @@ async function archivingParticipantsData(req, res) {
         const user_entry_detail_ids = user_entry_detail_For_Archive.map(r => r.ID );
         const survey_participant_ids = survey_participant_For_Archive.map(r => r.id );
 
-        // now you can use participant_ids, user_entry_detail_ids, survey_participant_ids
+        const participants_already_archived = await get_participants_already_archived(participant_ids);
+
+        if (participants_already_archived.length) {
+
+            await deleteAlreadyArchivedParticipants(participant_ids);
+        }
 
 
         const archiveTasks = [
@@ -35,10 +40,12 @@ async function archivingParticipantsData(req, res) {
         for (const [data, insertFn, deleteFn, ids] of archiveTasks) {
             if (data.length) {
                 await insertFn(data);
-                // await deleteFn(ids);
+                await deleteFn(ids);  
             }
         }
 
+
+        return
     } catch (error) {
         console.error("Archiving error:", error);
         return;
