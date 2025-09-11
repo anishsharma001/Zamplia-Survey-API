@@ -208,10 +208,18 @@ async function filterSurveys(surveys, isAllowSurvey, lucidBuyerList) {
           }
         }
 
-        const isValid = !excludedAccounts.includes(obj.AccountName) &&
+        let isValid = !excludedAccounts.includes(obj.AccountName) &&
           obj.CollectsPII === false &&
           (isAllowSurvey === 0 ? obj.BidIncidence > 0 : true) &&
+          (obj.RPI && obj.RPI.value > '0.90') &&
           shouldSelectSurveyBool.isSelected;
+
+        
+
+        if (obj.AccountName == 'Innovate MR') {
+          console.log('l');
+          
+        }
 
         return isValid ? obj : null;
       })
@@ -241,11 +249,13 @@ async function shouldSelectSurvey(obj, buyerListsConfig) {
       return { isSelected: false, accountName: '' };
     }
 
-    if (list.length && list[0].priority === -1) {
+    if (list.length && (list[0].priority == -1 || list[0].priority == -2 || list[0].priority >= 2)) {
       return { isSelected: false, accountName: '' };
     }
+    
     let listVal = list.map(item => item.buyername);
     if (listVal.includes(accountName)) {
+      console.log(list[0].priority, threshold, accountName);
       let isSelected = isCountryLanguage9 ? obj.Conversion >= threshold : obj.Conversion >= 1
       let objv = {isSelected: isSelected, accountName: ''}
       return objv
