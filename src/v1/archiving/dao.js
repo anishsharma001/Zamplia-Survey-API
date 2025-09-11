@@ -12,7 +12,7 @@ async function get_studies_already_archived(sids) {
     let result = await executeDev7(query, [sids]);
     return result;
 }
-    
+
 async function getStudiesMappingForArchiving(sids) {
     let query = 'select * from mappings where studyId in(?)';
     let result = await executeDev7(query, [sids]);
@@ -59,14 +59,14 @@ async function insertStudiesArchive(studies) {
     if (!studies || studies.length === 0) return;
 
     const columns = Object.keys(studies[0]);
-   
+
     const placeholders = studies
         .map(() => `(${columns.map(() => '?').join(',')})`)
         .join(',');
     const values = studies.flatMap(study => columns.map(col => study[col]));
     const query = `INSERT INTO studies_backup (${columns.join(',')}) VALUES ${placeholders}`;
-    let data =  await executeDev7(query, values);
-    return 
+    let data = await executeDev7(query, values);
+    return
 }
 
 async function insertMappingArchive(mappings) {
@@ -178,9 +178,9 @@ async function insertStudiesStatusCountArchive(statusCounts) {
         ON DUPLICATE KEY UPDATE ${updateColumns}
     `;
 
-   
-   let data= await executeDev7(query, values);
-   return
+
+    let data = await executeDev7(query, values);
+    return
 }
 
 async function insertStudiesStatusCountOnVendorsArchive(statusCounts) {
@@ -203,16 +203,123 @@ async function insertStudiesStatusCountOnVendorsArchive(statusCounts) {
         ON DUPLICATE KEY UPDATE ${updateColumns}
     `;
 
-    let data= await executeDev7(query, values);
-     return data;
+    let data = await executeDev7(query, values);
+    return data;
 }
 
 async function updateArchivedFlagInStudies(sids) {
     let query = 'update studies set isArchived=1 where apiType=1 and _id in (?)';
     let result = await executeDev7(query, [sids]);
-    return result;  
+    return result;
 
 }
+
+async function getParticipantsForArchiving(limit) {
+    let query = 'Select * from participants where createdAt < DATE_SUB(NOW(), INTERVAL 6 MONTH) LIMIT ?';
+    let result = await executeDev7(query, [limit]);
+    return result;
+
+}
+
+async function get_participants_already_archived(participant_ids) {
+    let query = 'Select p_id from participants_backup where p_id in (?)';
+    let result = await executeDev7(query, [participant_ids]);
+    return result;
+}
+
+async function getUserEntryDetailData(limit) {
+    let query = 'Select * from userentrydetails where createdAt < DATE_SUB(NOW(), INTERVAL 6 MONTH) LIMIT ?';
+    let result = await executeDev7(query, [limit]);
+    return result;
+}
+
+async function getSurveyParticipantData(limit) {
+    let query = 'Select * from survey_participants where created_at < DATE_SUB(NOW(), INTERVAL 6 MONTH) LIMIT ?';
+    let result = await executeDev7(query, [limit]);
+    return result;
+}
+
+
+
+async function insertParticipantsArchive(participants) {
+
+    if (!participants || participants.length === 0) return;
+
+    const columns = Object.keys(participants[0]);
+
+    const placeholders = participants
+        .map(() => `(${columns.map(() => '?').join(',')})`)
+        .join(',');
+    const values = participants.flatMap(participant => columns.map(col => participant[col]));
+    const query = `INSERT INTO participants_backup (${columns.join(',')}) VALUES ${placeholders}`;
+    let data = await executeDev7(query, values);
+    return
+}
+
+async function insertUserEntryDetailArchive(userEntryDetails) {
+    if (!userEntryDetails || userEntryDetails.length === 0) return;
+
+
+    const columns = Object.keys(userEntryDetails[0]).filter(col => col !== 'ID');
+
+    const placeholders = userEntryDetails
+        .map(() => `(${columns.map(() => '?').join(',')})`)
+        .join(',');
+
+    const values = userEntryDetails.flatMap(detail => columns.map(col => detail[col]));
+
+    const query = `INSERT INTO userentrydetailsarchive (${columns.join(',')}) VALUES ${placeholders}`;
+
+    let data = await executeDev7(query, values);
+    return data;
+
+}
+
+async function insertSurveyParticipantArchive(surveyParticipants) {
+    if (!surveyParticipants || surveyParticipants.length === 0) return;
+    const columns = Object.keys(surveyParticipants[0]).filter(col => col !== 'id');
+
+    const placeholders = surveyParticipants
+        .map(() => `(${columns.map(() => '?').join(',')})`)
+        .join(',');
+
+    const values = surveyParticipants.flatMap(detail => columns.map(col => detail[col]));
+
+    const query = `INSERT INTO survey_participants_backup (${columns.join(',')}) VALUES ${placeholders}`;
+
+    let data = await executeDev7(query, values);
+    return data;
+
+}
+
+
+async function getSurveyParticipant_url_Data(ids) {
+    let query = 'Select * from survey_participant_urls where participant_id in (?)';
+    let result = await executeDev7(query, [ids]);
+    return result;
+}
+
+async function insertSurveyParticipantUrlArchive(surveyParticipants) {
+    if (!surveyParticipants || surveyParticipants.length === 0) return;
+    const columns = Object.keys(surveyParticipants[0]).filter(col => col !== 'id');
+
+    const placeholders = surveyParticipants
+        .map(() => `(${columns.map(() => '?').join(',')})`)
+        .join(',');
+
+    const values = surveyParticipants.flatMap(detail => columns.map(col => detail[col]));
+
+    const query = `INSERT INTO survey_participant_urls_backup (${columns.join(',')}) VALUES ${placeholders}`;
+
+    let data = await executeDev7(query, values);
+    return data;
+
+}
+
+
+
+
+
 module.exports = {
     getStudiesForArchiving,
     getStudiesMappingForArchiving,
@@ -231,5 +338,14 @@ module.exports = {
     insertDemoConstraintsArchive,
     insertStudiesStatusCountArchive,
     insertStudiesStatusCountOnVendorsArchive,
-    updateArchivedFlagInStudies
+    updateArchivedFlagInStudies,
+    getParticipantsForArchiving,
+    getUserEntryDetailData,
+    getSurveyParticipantData,
+    insertParticipantsArchive,
+    insertUserEntryDetailArchive,
+    insertSurveyParticipantArchive,
+    get_participants_already_archived,
+    getSurveyParticipant_url_Data,
+    insertSurveyParticipantUrlArchive
 };
