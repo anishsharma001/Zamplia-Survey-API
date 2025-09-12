@@ -136,7 +136,7 @@ async function getallAiCategories() {
     const response = await axios.get(surveyUrl, { headers: { "Content-Type": "application/json" } });
     return [];
   } catch (error) {
-    throw new Error({ success: false, message: error.message || "Oops Something went wrong during get lucid surveys!" });
+    return [];
   }
 }
 
