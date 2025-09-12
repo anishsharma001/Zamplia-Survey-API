@@ -234,7 +234,7 @@ async function getUserEntryDetailData(limit) {
 }
 
 async function getSurveyParticipantData(limit) {
-    let query = 'Select * from survey_participants where created_at < DATE_SUB(NOW(), INTERVAL 6 MONTH) LIMIT ?';
+    let query = 'Select * from survey_participants  where created_at < DATE_SUB(NOW(), INTERVAL 3 MONTH) LIMIT ?';
     let result = await executeDev7(query, [limit]);
     return result;
 }
