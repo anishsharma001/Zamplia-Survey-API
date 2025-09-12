@@ -78,7 +78,7 @@ async function deleteUserEntryDetailForArchiving(ids) {
 }
 
 async function deleteSurveyParticipantForArchiving(ids) {
-    let query = 'delete from survey_participant where id in(?)';
+    let query = 'delete from survey_participants where id in(?)';
     let result = await executeDev7(query, [ids]);
     return result;
 }
