@@ -168,7 +168,7 @@ async function luicdSurveyPriority(req, res) {
             buyerSurveyCount[buyerName].statusOnePercentage = statusOnePercentage.toFixed(2) + '%';
 
             // Prepare data for upsert
-            upsertData.push([buyerName, priority]);
+            upsertData.push([buyerName, priority, 1]);
         }
 
         // Perform batch upsert to database
@@ -177,16 +177,20 @@ async function luicdSurveyPriority(req, res) {
                 // Process upserts in batches too
                 const UPSERT_BATCH_SIZE = 1000; // Smaller batch for inserts
 
+                await execute('update lucid_buyer_name_priority set is_active = 0 where id > 0;', []);
+
                 for (let i = 0; i < upsertData.length; i += UPSERT_BATCH_SIZE) {
                     const batch = upsertData.slice(i, i + UPSERT_BATCH_SIZE);
-                    const placeholders = batch.map(() => '(?, ?)').join(', ');
+                    const placeholders = batch.map(() => '(?, ?, ?)').join(', ');
                     const values = batch.flat();
 
-                    const batchUpsertQuery = `INSERT INTO lucid_buyer_name_priority (buyername, priority) 
+                    const batchUpsertQuery = `INSERT INTO lucid_buyer_name_priority (buyername, priority, is_active) 
                         VALUES ${placeholders}
                         ON DUPLICATE KEY UPDATE 
                             priority = IF(lucid_buyer_name_priority.priority = -1, lucid_buyer_name_priority.priority, VALUES(priority)),
-                            updatedAt = IF(lucid_buyer_name_priority.priority = -1, lucid_buyer_name_priority.updatedAt, CURRENT_TIMESTAMP) `;
+                            updatedAt = IF(lucid_buyer_name_priority.priority = -1, lucid_buyer_name_priority.updatedAt, CURRENT_TIMESTAMP),
+                            is_active = IF(lucid_buyer_name_priority.priority = -1, lucid_buyer_name_priority.is_active, VALUES(is_active))
+                            `;
 
                     execute(batchUpsertQuery, values);
                 }
