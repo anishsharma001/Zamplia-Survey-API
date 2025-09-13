@@ -633,12 +633,31 @@ async function upsertIntoUnmappedqualification(unMappedSurveyIds, unMappedQuals,
   }
 }
 
-  async function insertBuyerList(list) {
+async function insertBuyerList(upsertData) {
   try {
     // SELECT buyername, priority FROM lucid_buyer_name_priority
-    const query = `insert into lucid_buyer_name_priority(buyername, priority) values ?`
-    const result = await execute(query, [list]);
-    return result;
+    // const query = `insert into lucid_buyer_name_priority(buyername, priority) values ?`
+    // const result = await execute(query, [list]);
+    // return result;
+    const UPSERT_BATCH_SIZE = 100;
+    for (let i = 0; i < upsertData.length; i += UPSERT_BATCH_SIZE) {
+      const batch = upsertData.slice(i, i + UPSERT_BATCH_SIZE);
+      const placeholders = batch.map(() => '(?, ?, ?)').join(', ');
+      const values = batch.flat();
+
+      // Updated query to handle both -1 and -2 priorities (or any negative priority)
+      const batchUpsertQuery = `
+        INSERT INTO lucid_buyer_name_priority (buyername, priority, is_active) 
+            VALUES ${placeholders}
+        ON DUPLICATE KEY UPDATE 
+            priority = IF(lucid_buyer_name_priority.priority < 0, lucid_buyer_name_priority.priority, VALUES(priority)),
+            updatedAt = IF(lucid_buyer_name_priority.priority < 0, lucid_buyer_name_priority.updatedAt, CURRENT_TIMESTAMP),
+            is_active = IF(lucid_buyer_name_priority.priority < 0, lucid_buyer_name_priority.is_active, VALUES(is_active))
+      `;
+
+      // Add await here
+      await execute(batchUpsertQuery, values);
+    }
   } catch (error) {
     throw new Error(`Oops Something went wrong: ${error.message}`);
   }
