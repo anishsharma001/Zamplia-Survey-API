@@ -179,20 +179,24 @@ async function luicdSurveyPriority(req, res) {
 
                 await execute('update lucid_buyer_name_priority set is_active = 0 where id > 0;', []);
 
+                // Replace the batch upsert section with this:
                 for (let i = 0; i < upsertData.length; i += UPSERT_BATCH_SIZE) {
                     const batch = upsertData.slice(i, i + UPSERT_BATCH_SIZE);
                     const placeholders = batch.map(() => '(?, ?, ?)').join(', ');
                     const values = batch.flat();
 
-                    const batchUpsertQuery = `INSERT INTO lucid_buyer_name_priority (buyername, priority, is_active) 
+                    // Updated query to handle both -1 and -2 priorities (or any negative priority)
+                    const batchUpsertQuery = `
+                    INSERT INTO lucid_buyer_name_priority (buyername, priority, is_active) 
                         VALUES ${placeholders}
-                        ON DUPLICATE KEY UPDATE 
-                            priority = IF(lucid_buyer_name_priority.priority = -1, lucid_buyer_name_priority.priority, VALUES(priority)),
-                            updatedAt = IF(lucid_buyer_name_priority.priority = -1, lucid_buyer_name_priority.updatedAt, CURRENT_TIMESTAMP),
-                            is_active = IF(lucid_buyer_name_priority.priority = -1, lucid_buyer_name_priority.is_active, VALUES(is_active))
-                            `;
+                    ON DUPLICATE KEY UPDATE 
+                        priority = IF(lucid_buyer_name_priority.priority < 0, lucid_buyer_name_priority.priority, VALUES(priority)),
+                        updatedAt = IF(lucid_buyer_name_priority.priority < 0, lucid_buyer_name_priority.updatedAt, CURRENT_TIMESTAMP),
+                        is_active = IF(lucid_buyer_name_priority.priority < 0, lucid_buyer_name_priority.is_active, VALUES(is_active))
+                    `;
 
-                    execute(batchUpsertQuery, values);
+                    // Add await here
+                    await execute(batchUpsertQuery, values);
                 }
 
                 return res.send({
