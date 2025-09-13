@@ -204,7 +204,7 @@ async function filterSurveys(surveys, isAllowSurvey, lucidBuyerList) {
 
         if (shouldSelectSurveyBool?.accountName) {
           if (!buyerNeedToInsert.flat().includes(shouldSelectSurveyBool.accountName)){
-            buyerNeedToInsert.push([shouldSelectSurveyBool.accountName, 9]);// priority 9 means new entry
+            buyerNeedToInsert.push([shouldSelectSurveyBool.accountName, 9, 0]);// priority 9 means new entry
           }
         }
 
