@@ -48,11 +48,15 @@ async function lucidSurveyQuota(surveyData, allDBQualificationData, allDbOptions
     const batchSize = 50;
     await batchPromises(promises, batchSize);
 
-    await InsertQuotaDataIntoDb(allSurveysQuota);
+    if (allSurveysQuota.length) {
+      await InsertQuotaDataIntoDb(allSurveysQuota);
+    }
     const getAllQuotaIds = await getAllInsertedQuotas(allSurveyIds);
     const createQuotaDemoBundle = await getSurveyQuotaDemo(getAllQuotaIds, allClientQuotaDatas, allDBQualificationData, allDbOptions, insertedQualification);
 
-    await insertQuotaDemoIntoDb(createQuotaDemoBundle.quotaDemoBundle);
+    if (createQuotaDemoBundle.quotaDemoBundle.length) {
+      await insertQuotaDemoIntoDb(createQuotaDemoBundle.quotaDemoBundle);
+    }
 
     if (createQuotaDemoBundle.pauseQuotasUnAvailable.length) {
       await pauseUnAvailableQuotas(createQuotaDemoBundle.pauseQuotasUnAvailable);
