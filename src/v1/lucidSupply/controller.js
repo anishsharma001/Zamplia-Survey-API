@@ -238,11 +238,11 @@ async function shouldSelectSurvey(obj, buyerListsConfig) {
   // Check each buyer list
   for (const { list, threshold } of buyerListsConfig) {
 
-    if(threshold === 0 && obj.LengthOfInterview > 0) {
-      return { isSelected: false, accountName: '' };
-    }
+    // if(threshold === 0 && obj.LengthOfInterview > 0) {
+    //   return { isSelected: false, accountName: '' };
+    // }
 
-    if (list.length && (list[0].priority == -1 || list[0].priority == -2 || list[0].priority >= 4) && list[0].is_active == 0) {
+    if (list.length && (list[0].priority == -1 || list[0].priority == -2 || list[0].priority >= 2) && list[0].is_active == 0) {
       return { isSelected: false, accountName: '' };
     }
     
