@@ -79,7 +79,7 @@ async function luicdSurveyPriority(req, res) {
         let offset = 0;
         let hasMoreData = true;
 
-        const CompleteTermsBatch = await getCompleteTermsBatch(lang_code);
+        const CompleteTermsBatch = await getCompleteTermsBatch(lang_code, type);
 
         // Process current batch
         for (let index = 0; index < CompleteTermsBatch.length; index++) {
@@ -369,7 +369,13 @@ async function luicdSurveyPriority(req, res) {
     }
 }
 
-async function getCompleteTermsBatch(lang_code) {
+async function getCompleteTermsBatch(lang_code, type) {
+    let subQuery = 'NOW() - INTERVAL 1 DAY'
+
+    if (type == 2) {
+        subQuery = ' NOW() - INTERVAL 2 HOUR'
+    }
+
     const query = ` SELECT 
                         p.refsid, 
                         p.status
@@ -377,7 +383,7 @@ async function getCompleteTermsBatch(lang_code) {
                     LEFT JOIN studies s ON s.apisurveyid = p.refsid AND s.lang_code = 'En-US'
                     LEFT JOIN client_term_status c ON c.pid = p.p_id
                     WHERE p.apitype = 8
-                        AND p.createdAt >=  NOW() - INTERVAL 1 DAY
+                        AND p.createdAt >=  ${subQuery}
                         and c.status != -1 order by c.id desc`;
     const result = await execute(query, [lang_code]);
     return result;
