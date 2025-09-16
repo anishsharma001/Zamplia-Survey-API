@@ -242,7 +242,7 @@ async function shouldSelectSurvey(obj, buyerListsConfig) {
     //   return { isSelected: false, accountName: '' };
     // }
 
-    if (list.length && (list[0].priority == -1 || list[0].priority == -2 || list[0].priority >= 4) && list[0].is_active == 0) {
+    if (list.length && (list[0].priority == -1 || list[0].priority == -2 || list[0].priority >= 7) && list[0].is_active == 0) {
       return { isSelected: false, accountName: '' };
     }
     
