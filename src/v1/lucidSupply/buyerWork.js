@@ -257,7 +257,7 @@ async function luicdSurveyPriority(req, res) {
                 surveySurveyCount[refsid].terminationRate = terminationRate.toFixed(2);
                 surveySurveyCount[refsid].statusThreeCount = statusThreeCount;
 
-                if ((conversionRate > 10 && data.totalCount > 20) && terminationRate < 50) {
+                if ((conversionRate > 10 && data.totalCount > 10) && terminationRate < 60) {
                     // Prepare survey data for upsert
                     surveyUpsertData.push([
                         refsid,
@@ -373,7 +373,7 @@ async function getCompleteTermsBatch(lang_code, type) {
     let subQuery = 'NOW() - INTERVAL 1 DAY'
 
     if (type == 2) {
-        subQuery = ' NOW() - INTERVAL 2 HOUR'
+        subQuery = ' NOW() - INTERVAL 12 HOUR'
     }
 
     const query = ` SELECT 
