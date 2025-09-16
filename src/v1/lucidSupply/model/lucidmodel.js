@@ -44,7 +44,7 @@ async function getlucidBuyerListFromDb() {
  * @param {Array} surveysData - The survey data to be upserted.
  */
 async function upsertStudiesData(surveysData) {
-  let initialBatchSize = 200;
+  let initialBatchSize = 50;
   let maxAttempts = 3;
   const query = `
     INSERT INTO studies (
@@ -137,7 +137,7 @@ async function upsertLucidGlobalSurveyDataAllowcational(surveyBulkData){
 }
 
 async function upsertStudiesDataAllowcational(surveysData) {
-  const initialBatchSize = 200; // start batch size
+  const initialBatchSize = 50; // start batch size
   const maxAttempts = 3;       // max retry attempts per batch
 
   const query = `
