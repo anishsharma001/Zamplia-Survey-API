@@ -187,19 +187,19 @@ async function luicdSurveyPriority(req, res) {
                 let priority = 10;
                 if (statusOnePercentage > 30) {
                     priority = 1;
-                } else if (statusOnePercentage > 25) {
-                    priority = 2;
                 } else if (statusOnePercentage > 20) {
-                    priority = 3;
+                    priority = 2;
                 } else if (statusOnePercentage > 15) {
+                    priority = 3;
+                } else if (statusOnePercentage > 12) {
                     priority = 4;
-                } else if (statusOnePercentage > 13) {
+                } else if (statusOnePercentage > 9) {
                     priority = 5;
-                } else if (statusOnePercentage > 10) {
-                    priority = 6;
                 } else if (statusOnePercentage > 8) {
+                    priority = 6;
+                } else if (statusOnePercentage > 6) {
                     priority = 7;
-                } else if (statusOnePercentage > 5) {
+                } else if (statusOnePercentage > 3) {
                     priority = 8;
                 } else if (statusOnePercentage > 2) {
                     priority = 9;
@@ -219,7 +219,7 @@ async function luicdSurveyPriority(req, res) {
         if (type === 2) {
             for (const [refsid, data] of Object.entries(surveyAnalysis)) {
                 // Only process surveys with at least some data
-                if (data.totalCount === 0 || !data.buyerName) {
+                if (data.totalCount === 0 || !data.buyerName || skipBuyers.has(data.buyerName)) {
                     continue;
                 }
 
@@ -257,7 +257,7 @@ async function luicdSurveyPriority(req, res) {
                 surveySurveyCount[refsid].terminationRate = terminationRate.toFixed(2);
                 surveySurveyCount[refsid].statusThreeCount = statusThreeCount;
 
-                if ((conversionRate > 10 && data.totalCount > 10) && terminationRate < 60) {
+                if ((conversionRate > 10 && data.totalCount > 10) && terminationRate < 70) {
                     // Prepare survey data for upsert
                     surveyUpsertData.push([
                         refsid,
