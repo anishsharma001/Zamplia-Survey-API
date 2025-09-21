@@ -10,7 +10,7 @@ const { symmetricSamplingIntergration} = require("../v1/symmetricSamplingIntergr
 const { archivingStudies } = require("../v1/archiving/studies");
 const { archivingParticipants } = require("../v1/archiving/participant");
 const { luicdSurveyPriority } = require("../v1/lucidSupply/buyerWork");
-
+const { insertInnovateSurveyInDb } = require("../v1/innovatePulling/index");
 router.route("/lucid-pulling").post(LucidPulling);
 router.route("/sago-pulling").get(sagoPulling);
 router.route("/unimrkt-pulling").post(insertUnimrktSurveysInDb);
@@ -20,5 +20,7 @@ router.route("/symmtric-pulling").post(symmetricSamplingIntergration);
 router.route("/archiving-studies").get(archivingStudies);
 router.route("/archiving-participants").get(archivingParticipants);
 router.route("/lucid-survey-priority").post(luicdSurveyPriority);
+router.route("/innovate-pulling").post(insertInnovateSurveyInDb);
+
 
 module.exports = router;
