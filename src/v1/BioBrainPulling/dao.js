@@ -38,15 +38,21 @@ async function getAppConfig(config) {
 
 
 
-async function upsertStudiesData(surveysData) {
-    try {
-        const query = "INSERT INTO studies ( _id, studyName, description, orignalRequirment, firstPartyUrl, firstPartyUrlTest, fees, status, loi, ir, isActive,  apiType, country, lang_code, apiClientId, client, apiSurveyId,surveyEndDate, device, isCountryCheck, isgroupsecurityactive, allowDemo, isPIIActive, studytypes, isSampleChainReview, vendorSharedQuota, clientType, categoryId,lucidClientName,isRouterEligible) VALUES ? ON DUPLICATE KEY UPDATE orignalRequirment = VALUES(orignalRequirment), firstPartyUrl = VALUES(firstPartyUrl), fees = VALUES(fees), loi = VALUES(loi),ir = VALUES(ir), updatedAt = VALUES(updatedAt), status = VALUES(status), isActive = VALUES(isActive), device = VALUES(device), EPC = VALUES(EPC), clientSurveyGUID = VALUES(clientSurveyGUID),isgroupsecurityactive = VALUES(isgroupsecurityactive), allowDemo = VALUES(allowDemo), isPIIActive = VALUES(isPIIActive), studytypes = VALUES(studytypes), categoryId = VALUES(categoryId), lucidClientName = VALUES(lucidClientName),isRouterEligible=VALUES(isRouterEligible)";
-        const result = await executeDev7(query, [surveysData]);
-        return result;
-    } catch (error) {
-        throw new Error("oops SOmething went wrong, please contact to support!")
-    }
+async function getCountryLanguage() {
+  try {
+    const query = `
+      SELECT languageName, countryCode, ISOCode, lang_code, countryName
+      FROM language
+    `;
+    
+const result = await executeDev7(query, []);
+    return Array.isArray(result) ? result : [];
+  } catch (error) {
+    console.error('Error fetching country languages:', error);
+    return [];
+  }
 }
+
 
 async function getAllQualificationFromDb(lang_code) {
   try {
