@@ -1,24 +1,24 @@
-const queryWrapper = require('../../database/queryWrapperMysql');
-module.exports.insertRecord=async function (dataQuery,record) {
-    var isAvailable = [];
-    var data = {};
-    return new Promise(function (resolve, reject) {
-        var query = dataQuery;
-        queryWrapper.execute(query, [record], function (result) {
-            if (result.errno && result.errno !== undefined) {
-                data.result = false; 
-                isAvailable.push(data);
-            } else {
-                if (result.length > 0 || (result.hasOwnProperty('affectedRows') && result.affectedRows > 0)) {
-                    data.result = true;
-                    data.studyData = result;
-                    isAvailable.push(data);
-                } else {
-                    data.result = false;
-                    isAvailable.push(data);
-                }
-            }
-            resolve(isAvailable);
-        });
-    });
-}
+const { executeDev7 } = require('../../database/queryWrapperMysql');
+
+module.exports.insertRecord = async function (dataQuery, record) {
+  try {
+    // executeDev7 expects parameters as an array
+    const result = await executeDev7(dataQuery, [record]);
+
+    // Check if result indicates error
+    if (result.errno && result.errno !== undefined) {
+      return { result: false };
+    }
+
+    // Check if insert/update returned rows or affectedRows
+    if (result.length > 0 || (result.hasOwnProperty('affectedRows') && result.affectedRows > 0)) {
+      return { result: true, studyData: result };
+    }
+
+    // Default fallback
+    return { result: false };
+  } catch (error) {
+    console.error('Error inserting record:', error);
+    return { result: false };
+  }
+};
