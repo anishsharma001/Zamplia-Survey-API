@@ -15,8 +15,8 @@ async function getProjectFromApi(lang_Code) {
          surveys = surveysFromBrainBrio.result.Surveys;
             surveys = surveys.filter(function (record) {
                 
-            return record.Ir > 25
-                && record.Loi <= 25  && record.LanguageId == LanguageId.marketCubeId;
+            return record.Ir > 10
+                && record.Loi <= 40  && record.LanguageId == LanguageId.marketCubeId;
         });
            let buyerConfig = await getAppConfig('biobrainBuyerConfig');
            if(buyerConfig.length && buyerConfig[0].isActive == 1){
