@@ -2,7 +2,7 @@ const { update } = require('lodash');
 const { executeDev7 } = require('../../database/queryWrapperMysql');
 // 
 async function getStudiesForArchiving(limit) {
-    let query = `select  s.* from studies as s where s.apiType=1  and s.status != 'Live' and  s.createdAt < DATE_SUB(NOW(), INTERVAL 2 MONTH) LIMIT ?`;
+    let query = `select  s.* from studies as s where s.apiType=1  and s.status != 'Live' and  s.createdAt < DATE_SUB(NOW(), INTERVAL 4 MONTH) LIMIT ?`;
     let result = await executeDev7(query, [limit]);
     return result;
 }
