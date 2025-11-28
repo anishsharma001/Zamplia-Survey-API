@@ -102,7 +102,7 @@ async function surveyPulling(lang_code, CPIGTE, CPILTE, LengthOfInterviewLTE, Co
     // upsert studies data and vendors mapping data
     if (surveyBundleData[0].length) {
       await upsertStudiesData(surveyBundleData[0]);
-      getallAiCategories();
+      // getallAiCategories();
       // upsertLucidGlobalSurveyData(surveyBundleData[3])
     }
     if (surveyBundleData[1].length) {
