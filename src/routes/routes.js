@@ -12,6 +12,7 @@ const { archivingParticipants } = require("../v1/archiving/participant");
 const { luicdSurveyPriority } = require("../v1/lucidSupply/buyerWork");
 const { insertInnovateSurveyInDb } = require("../v1/innovatePulling/index");
 const { liveLucidDemandSurvey } = require("../v1/lucidSupply/liveLucidDemandSurvey");
+const { insertVendorReconsilation } = require("../v1/vendorReconsilation/index");
 router.route("/lucid-pulling").post(LucidPulling);
 router.route("/sago-pulling").get(sagoPulling);
 router.route("/unimrkt-pulling").post(insertUnimrktSurveysInDb);
@@ -23,6 +24,7 @@ router.route("/archiving-participants").get(archivingParticipants);
 router.route("/lucid-survey-priority").post(luicdSurveyPriority);
 router.route("/innovate-pulling").post(insertInnovateSurveyInDb);
 router.route("/live-lucid-survey").post(liveLucidDemandSurvey);
+router.route("/insert-vendor-reconcilation").get(insertVendorReconsilation);
 
 
 module.exports = router;
