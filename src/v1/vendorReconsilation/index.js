@@ -136,7 +136,6 @@ async function insertVendorReconsilation(req, res) {
             await execute(insertQuery);
         }
 
-        // summary adjustments and thresholds
         const vendorCategorySummaryQuery = `
             SELECT 
                 id, tid, vendorName, vendorCategory, TotalParticipants, Revenue, Expense, TotalComplete, 
@@ -172,7 +171,7 @@ async function insertVendorReconsilation(req, res) {
         for (const s of (vendorCategorySummary || [])) {
             const aid = s.id;
             const tid = s.tid;
-            const vendorName = s.vendorName;
+            const vendorCategory = s.vendorCategory;
             const TotalComplete = Number(s.TotalComplete) || 0;
             const NegativeReconciliation = Number(s.NegativeReconciliation) || 0;
             const currentMonthRecon = Number(s.currentMonthRecon) || 0;
@@ -180,7 +179,7 @@ async function insertVendorReconsilation(req, res) {
             let olderMonthReconValue = vendorCategorySummaryOlder.find(v => v.tid === s.tid);
             if (olderMonthReconValue) {
                 console.log(olderMonthReconValue);
-                
+
             }
             const lastMonthRecon = Number(lastMonthReconValue ? lastMonthReconValue.currentMonthRecon : 0) || 0;
             const olderMonthRecon = Number(olderMonthReconValue ? olderMonthReconValue.currentMonthRecon : 0) || 0;
@@ -205,34 +204,34 @@ async function insertVendorReconsilation(req, res) {
             });
 
             // Determine group/threshold changes
-            if (vendorName === 'Group A') {
+            if (vendorCategory === 'Group A') {
                 if (reconcilationRate > 12 && lastMonthRecon > 12 && olderMonthRecon > 12) {
-                    bulkUpdates.groupChanges.push({ id: aid, vendorName: 'Group B', threshold: 90 });
+                    bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group B', threshold: 90 });
                     await moveVendorGroup(tid, 'Group A', 'Group B')
                 } else if (reconcilationRate > 12 && lastMonthRecon > 12) {
-                    bulkUpdates.groupChanges.push({ id: aid, vendorName: 'Group A', threshold: 80 });
+                    bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group A', threshold: 80 });
                 } else if (reconcilationRate > 12) {
-                    bulkUpdates.groupChanges.push({ id: aid, vendorName: 'Group A', threshold: 50 });
+                    bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group A', threshold: 50 });
                 } else if (reconcilationRate < 12 && threshold == 50) {
-                    bulkUpdates.groupChanges.push({ id: aid, vendorName: 'Group A', threshold: 0 });
+                    bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group A', threshold: 0 });
                 } else if (reconcilationRate < 12 && lastMonthRecon < 12 && threshold == 80) {
-                    bulkUpdates.groupChanges.push({ id: aid, vendorName: 'Group A', threshold: 50 });
+                    bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group A', threshold: 50 });
                 }
-            } else if (vendorName === 'Group B') {
+            } else if (vendorCategory === 'Group B') {
                 if (reconcilationRate > 20 && lastMonthRecon > 20) {
-                    bulkUpdates.groupChanges.push({ id: aid, vendorName: 'Group C', threshold: 95 });
+                    bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group C', threshold: 95 });
                     await moveVendorGroup(tid, 'Group B', 'Group C')
                 } else if (reconcilationRate > 20) {
-                    bulkUpdates.groupChanges.push({ id: aid, vendorName: 'Group B', threshold: 95 });
+                    bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group B', threshold: 95 });
                 } else if (reconcilationRate < 12 && lastMonthRecon < 12) {
-                    bulkUpdates.groupChanges.push({ id: aid, vendorName: 'Group A', threshold: 0 });
+                    bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group A', threshold: 0 });
                     await moveVendorGroup(tid, 'Group B', 'Group A')
                 }
             } else {
                 if (reconcilationRate >= 11 && reconcilationRate <= 20
                     && lastMonthRecon >= 11 && lastMonthRecon <= 20
                     && olderMonthRecon >= 11 && olderMonthRecon <= 20) {
-                    bulkUpdates.groupChanges.push({ id: aid, vendorName: 'Group B', threshold: 90 });
+                    bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group B', threshold: 90 });
                     await moveVendorGroup(tid, 'Group C', 'Group B')
                 }
             }
@@ -266,38 +265,36 @@ async function insertVendorReconsilation(req, res) {
                 const batch = bulkUpdates.groupChanges.slice(i, i + BATCH_SIZE);
                 const ids = batch.map(r => `'${r.id}'`).join(',');
 
-                const hasVendorNameChanges = batch.some(r => r.vendorName !== null);
+                const hasvendorCategoryChanges = batch.some(r => r.vendorCategory !== null);
 
                 const thresholdCases = batch.map(r => `WHEN id = '${r.id}' THEN ${r.threshold}`).join(' ');
 
-                let vendorNameSet = '';
-                if (hasVendorNameChanges) {
-                    const vendorNameCases = batch.map(r =>
-                        `WHEN id = '${r.id}' THEN ${r.vendorName !== null ? `'${r.vendorName}'` : 'vendorName'}`
+                let vendorCategorySet = '';
+                if (hasvendorCategoryChanges) {
+                    const vendorCategoryCases = batch.map(r =>
+                        `WHEN id = '${r.id}' THEN ${r.vendorCategory !== null ? `'${r.vendorCategory}'` : 'vendorCategory'}`
                     ).join(' ');
-                    vendorNameSet = `vendorName = CASE ${vendorNameCases} ELSE vendorName END,`;
+                    vendorCategorySet = `vendorCategory = CASE ${vendorCategoryCases} ELSE vendorCategory END,`;
                 }
 
                 await execute(`
                     UPDATE vendor_category_summary
-                    SET ${vendorNameSet}
+                    SET ${vendorCategorySet}
                         threshold = CASE ${thresholdCases} ELSE threshold END
                     WHERE id IN (${ids})
                 `);
             }
         }
-
         console.log('All thing is done');
 
-
         return res.send({
-                success: true,
-            })
+            success: true,
+        })
     } catch (error) {
         return res.send({
-                success: false,
-                error: "error"
-            })
+            success: false,
+            error: "error"
+        })
     }
 }
 
