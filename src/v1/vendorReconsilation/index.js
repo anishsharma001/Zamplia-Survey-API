@@ -228,9 +228,7 @@ async function insertVendorReconsilation(req, res) {
                     await moveVendorGroup(tid, 'Group B', 'Group A')
                 }
             } else {
-                if (reconcilationRate >= 11 && reconcilationRate <= 20
-                    && lastMonthRecon >= 11 && lastMonthRecon <= 20
-                    && olderMonthRecon >= 11 && olderMonthRecon <= 20) {
+                if (reconcilationRate <= 20 && lastMonthRecon <= 20 && olderMonthRecon <= 20) {
                     bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group B', threshold: 90 });
                     await moveVendorGroup(tid, 'Group C', 'Group B')
                 }
