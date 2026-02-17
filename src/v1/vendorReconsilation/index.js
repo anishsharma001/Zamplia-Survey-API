@@ -329,7 +329,7 @@ async function getCalibr8ScoreByGroup(vendors, start, end) {
         if (!vendors || vendors.length === 0) return [];
 
         // Step 3: Create chunks
-        const VENDOR_CHUNK_SIZE = 2;
+        const VENDOR_CHUNK_SIZE = 5;
         const vendorChunks = chunkArray(vendors, VENDOR_CHUNK_SIZE);
         const weeklyChunks = getWeeklyChunks(start, end);
 
@@ -407,14 +407,13 @@ function chunkArray(array, size) {
 function getWeeklyChunks(startDate, endDate) {
     const chunks = [];
     let current = new Date(startDate);
-    // const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
-
+    const end = new Date(endDate);          // ✅ Convert to Date object
     const DAYS = 7;
     const CHUNK_MS = DAYS * 24 * 60 * 60 * 1000;
 
-    while (current < endDate) {
+    while (current < end) {                 // ✅ Now comparing Date vs Date
         const chunkEnd = new Date(
-            Math.min(current.getTime() + CHUNK_MS, endDate.getTime())
+            Math.min(current.getTime() + CHUNK_MS, end.getTime())
         );
         chunks.push({
             start: new Date(current),
@@ -424,7 +423,6 @@ function getWeeklyChunks(startDate, endDate) {
     }
     return chunks;
 }
-
 module.exports = {
     insertVendorReconsilation
 };
