@@ -51,7 +51,7 @@ async function insertVendorReconsilation(req, res) {
         const vendorIdsList = vendors.map(v => `'${v.vendorId}'`).join(',');
 
         // const calibr8Result = [];
-        const calibr8Result = await getCalibr8ScoreByGroup(vendors);
+        const calibr8Result = await getCalibr8ScoreByGroup(vendors, startDate, endDate);
         const calibr8Map = (calibr8Result || []).reduce((m, r) => {
             m[`${r.vendorId}`] = Number(r.avgScore) || 0;
             return m;
@@ -322,18 +322,11 @@ const moveVendorGroup = async (
 };
 
 
-async function getCalibr8ScoreByGroup(vendors) {
+async function getCalibr8ScoreByGroup(vendors, start, end) {
     try {
         // Step 1: Get vendors
 
         if (!vendors || vendors.length === 0) return [];
-        vendors.length = 2
-        // Step 2: Date range
-        const now = new Date();
-        const start = now.getDate() >= 15
-            ? new Date(now.getFullYear(), now.getMonth(), 15)
-            : new Date(now.getFullYear(), now.getMonth() - 1, 15);
-        const end = new Date(start.getFullYear(), start.getMonth() + 1, 15);
 
         // Step 3: Create chunks
         const VENDOR_CHUNK_SIZE = 2;
