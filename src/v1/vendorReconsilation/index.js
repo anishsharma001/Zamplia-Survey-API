@@ -14,29 +14,24 @@ async function insertVendorReconsilation(req, res) {
         const dateIn = req.query.dateIn;
 
         const now = new Date(dateIn);
-        const start = new Date(now.getFullYear(), now.getMonth() - 1, 15);
-        const end = new Date(start.getFullYear(), start.getMonth() + 1, 15);
+        const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const end = new Date(start.getFullYear(), start.getMonth() + 1, 1);
 
         // current month cycle
         const startDate = fmtDate(start);
         const endDate = fmtDate(end);
 
         // last month cycle (start -1 month)
-        const lastStart = new Date(start.getFullYear(), start.getMonth() - 1, 15);
-        const lastEnd = new Date(start.getFullYear(), start.getMonth(), 15);
+        const lastStart = new Date(start.getFullYear(), start.getMonth() - 1, 1);
+        const lastEnd = new Date(start.getFullYear(), start.getMonth(), 1);
         const lastStartDate = fmtDate(lastStart);
         const lastEndDate = fmtDate(lastEnd);
 
         // older month cycle (start -2 months)
-        const olderStart = new Date(start.getFullYear(), start.getMonth() - 2, 15);
-        const olderEnd = new Date(start.getFullYear(), start.getMonth() - 1, 15);
+        const olderStart = new Date(start.getFullYear(), start.getMonth() - 2, 1);
+        const olderEnd = new Date(start.getFullYear(), start.getMonth() - 1, 1);
         const olderStartDate = fmtDate(olderStart);
         const olderEndDate = fmtDate(olderEnd);
-
-        // example:
-        // current:   ${startDate} .. ${endDate}
-        // last:      ${lastStartDate} .. ${lastEndDate}
-        // older:     ${olderStartDate} .. ${olderEndDate}
 
         // vendors
         const vendorQuery = `
@@ -223,12 +218,12 @@ async function insertVendorReconsilation(req, res) {
                     await moveVendorGroup(tid, 'Group B', 'Group C')
                 } else if (reconcilationRate > 20) {
                     bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group B', threshold: 95 });
-                } else if (reconcilationRate < 12 && lastMonthRecon < 12) {
+                } else if ((reconcilationRate > 0 && reconcilationRate < 12) && (lastMonthRecon < 12 && lastMonthRecon > 0)) {
                     bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group A', threshold: 0 });
                     await moveVendorGroup(tid, 'Group B', 'Group A')
                 }
             } else {
-                if (reconcilationRate <= 20 && lastMonthRecon <= 20 && olderMonthRecon <= 20) {
+                if ((reconcilationRate > 0 && reconcilationRate <= 20) && (lastMonthRecon > 0 && lastMonthRecon <= 20) && olderMonthRecon <= 20) {
                     bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group B', threshold: 90 });
                     await moveVendorGroup(tid, 'Group C', 'Group B')
                 }
