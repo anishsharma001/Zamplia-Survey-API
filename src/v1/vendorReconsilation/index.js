@@ -297,8 +297,8 @@ const moveVendorGroup = async (
     toGroup,
 ) => {
     try {
-        // const query = `UPDATE vendors SET vendor_category = ? WHERE _id = ?`;
-        // await execute(query, [toGroup, vendorId]);
+        const query = `UPDATE vendors SET vendor_category = ? WHERE _id = ?`;
+        await execute(query, [toGroup, vendorId]);
         const logQuery = `INSERT INTO vendor_category_summary_log (vendorId, fromGroup, toGroup, actionType, performedBy) VALUES (?, ?, ?, ?, ?)`;
         await execute(logQuery, [vendorId, fromGroup, toGroup, 'Vendor Group Move', 'SYSTEM']);
 
