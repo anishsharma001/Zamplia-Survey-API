@@ -113,9 +113,9 @@ async function insertVendorReconsilation(req, res) {
             if (vendorCategory === 'Group A') {
                 threshold = 0;
             } else if (vendorCategory === 'Group B') {
-                threshold = 90;
-            } else if (vendorCategory === 'Group C') {
                 threshold = 95;
+            } else if (vendorCategory === 'Group C') {
+                threshold = 100;
             }
 
             inserts.push(`('${vendorId}','${vendorName}','${vendorCategory}',${TotalParticipants},${Revenue},${Expense},${Number(calibr8Score)},${TotalCompletes}, ${PositiveReconciliation}, ${NegativeReconciliation},
@@ -189,42 +189,42 @@ async function insertVendorReconsilation(req, res) {
                 continue;
             }
 
-            const reconcilationRate = (NegativeReconciliation / TotalComplete) * 100;
+            const currentMonthRecons = (NegativeReconciliation / TotalComplete) * 100;
 
             bulkUpdates.reconciliation.push({
                 id: aid,
-                currentMonthRecon: reconcilationRate,
+                currentMonthRecon: currentMonthRecons,
                 lastMonthRecon,
                 olderMonthRecon,
             });
 
             // Determine group/threshold changes
             if (vendorCategory === 'Group A') {
-                if (reconcilationRate > 12 && lastMonthRecon > 12 && olderMonthRecon > 12) {
-                    bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group B', threshold: 90 });
+                if (currentMonthRecons > 12 && lastMonthRecon > 12 && olderMonthRecon > 12) {
+                    bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group B', threshold: 95 });
                     await moveVendorGroup(tid, 'Group A', 'Group B')
-                } else if (reconcilationRate > 12 && lastMonthRecon > 12) {
+                } else if (currentMonthRecons > 12 && lastMonthRecon > 12) {
                     bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group A', threshold: 80 });
-                } else if (reconcilationRate > 12) {
+                } else if (currentMonthRecons > 12) {
                     bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group A', threshold: 50 });
-                } else if (reconcilationRate < 12 && threshold == 50) {
+                } else if (currentMonthRecons < 12 && threshold == 50) {
                     bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group A', threshold: 0 });
-                } else if (reconcilationRate < 12 && lastMonthRecon < 12 && threshold == 80) {
+                } else if (currentMonthRecons < 12 && lastMonthRecon < 12 && threshold == 80) {
                     bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group A', threshold: 50 });
                 }
             } else if (vendorCategory === 'Group B') {
-                if (reconcilationRate > 20 && lastMonthRecon > 20) {
-                    bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group C', threshold: 95 });
+                if (currentMonthRecons > 20 && lastMonthRecon > 20) {
+                    bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group C', threshold: 100 });
                     await moveVendorGroup(tid, 'Group B', 'Group C')
-                } else if (reconcilationRate > 20) {
-                    bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group B', threshold: 95 });
-                } else if ((reconcilationRate > 0 && reconcilationRate < 12) && (lastMonthRecon < 12 && lastMonthRecon > 0)) {
-                    bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group A', threshold: 0 });
+                } else if (currentMonthRecons > 20) {
+                    bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group B', threshold: 100 });
+                } else if ((currentMonthRecons > 0 && currentMonthRecons < 12) && (lastMonthRecon < 12 && lastMonthRecon > 0)) {
+                    bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group A', threshold: 80 });
                     await moveVendorGroup(tid, 'Group B', 'Group A')
                 }
             } else {
-                if ((reconcilationRate > 0 && reconcilationRate <= 20) && (lastMonthRecon > 0 && lastMonthRecon <= 20) && olderMonthRecon <= 20) {
-                    bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group B', threshold: 90 });
+                if ((currentMonthRecons > 0 && currentMonthRecons <= 20) && (lastMonthRecon > 0 && lastMonthRecon <= 20) && olderMonthRecon <= 20) {
+                    bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group B', threshold: 95 });
                     await moveVendorGroup(tid, 'Group C', 'Group B')
                 }
             }
