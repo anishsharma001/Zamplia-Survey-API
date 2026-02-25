@@ -35,7 +35,7 @@ async function insertVendorReconsilation(req, res) {
 
         // vendors
         const vendorQuery = `
-            SELECT _id as vendorId, vendorName, vendor_category
+            SELECT _id as vendorId, vendorName, vendor_category, v_id
             FROM vendors
             WHERE vendor_category IN ('Group A', 'Group B', 'Group C') and isactive = 1;
         `;
@@ -52,6 +52,9 @@ async function insertVendorReconsilation(req, res) {
             return m;
         }, {});
 
+
+        let configDataQuery = `SELECT id, sids FROM app_configs WHERE configtype= 'dataModuleEnable'`
+        const configData = await execute(configDataQuery);
         // single grouped recon query for all vendors for the cycle
         const reconQuery = `
             SELECT 
@@ -166,16 +169,13 @@ async function insertVendorReconsilation(req, res) {
         for (const s of (vendorCategorySummary || [])) {
             const aid = s.id;
             const tid = s.tid;
+            const v_id = vendors.find(d => d.vendorId == tid)?.v_id
             const vendorCategory = s.vendorCategory;
             const TotalComplete = Number(s.TotalComplete) || 0;
             const NegativeReconciliation = Number(s.NegativeReconciliation) || 0;
             const currentMonthRecon = Number(s.currentMonthRecon) || 0;
             let lastMonthReconValue = vendorCategorySummaryLast.find(v => v.tid === s.tid);
             let olderMonthReconValue = vendorCategorySummaryOlder.find(v => v.tid === s.tid);
-            if (olderMonthReconValue) {
-                console.log(olderMonthReconValue);
-
-            }
             const lastMonthRecon = Number(lastMonthReconValue ? lastMonthReconValue.currentMonthRecon : 0) || 0;
             const olderMonthRecon = Number(olderMonthReconValue ? olderMonthReconValue.currentMonthRecon : 0) || 0;
             const threshold = Number(s.threshold) || 0;
@@ -206,8 +206,10 @@ async function insertVendorReconsilation(req, res) {
                 } else if (currentMonthRecons > 12 && lastMonthRecon > 12) {
                     bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group A', threshold: 80 });
                 } else if (currentMonthRecons > 12) {
+                    await startCallibr8(v_id, configData, tid)
                     bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group A', threshold: 50 });
                 } else if (currentMonthRecons < 12 && threshold == 50) {
+                    await stopCallibr8(v_id, configData, tid)
                     bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group A', threshold: 0 });
                 } else if (currentMonthRecons < 12 && lastMonthRecon < 12 && threshold == 80) {
                     bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group A', threshold: 50 });
@@ -310,6 +312,48 @@ const moveVendorGroup = async (
         return { success: false, message: "Server error" };
     }
 };
+const startCallibr8 = async (v_id, configData, tid) => {
+
+  if (v_id && tid && configData.length) {
+    const { id, sids } = configData[0];
+    v_id = String(v_id)
+    let tids = sids ? sids.split(",") : [];
+
+    // add if not exists
+    if (!tids.includes(tid) || !tids.includes(v_id)) {
+      tids.push(tid);
+      tids.push(v_id);
+
+      const updatedTids = tids.join(",");
+      await execute(
+        `UPDATE app_configs SET sids = ? WHERE id = ?`,
+        [updatedTids, id]
+      );
+    }
+  }
+};
+
+const stopCallibr8 = async (v_id, configData, tid) => {
+
+  if (v_id && tid && configData.length) {
+    const { id, sids } = configData[0];
+    v_id = String(v_id)
+    let tids = sids ? sids.split(",") : [];
+
+    // remove if exists
+    if (tids.includes(tid) || tids.includes(v_id)) {
+      tids = tids.filter(t => t !== tid);
+      tids = tids.filter(t => t !== v_id);
+
+      const updatedTids = tids.join(",");
+      await execute(
+        `UPDATE app_configs SET sids = ? WHERE id = ?`,
+        [updatedTids, id]
+      );
+    }
+  }
+};
+
 
 
 async function getCalibr8ScoreByGroup(vendors, start, end) {
