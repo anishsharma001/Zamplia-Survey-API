@@ -11,7 +11,7 @@ async function insertVendorReconsilation(req, res) {
         //  const startDatel = '2025-11-15 01:00:00';
         // const endDatel = '2025-12-15 01:00:00';
         // const endDatel = '2026-02-15 00:00:00';
-        const dateIn = req.query.dateIn;
+        const dateIn = new Date();
 
         const now = new Date(dateIn);
         const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
