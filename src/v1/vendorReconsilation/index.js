@@ -11,7 +11,7 @@ async function insertVendorReconsilation(req, res) {
         //  const startDatel = '2025-11-15 01:00:00';
         // const endDatel = '2025-12-15 01:00:00';
         // const endDatel = '2026-02-15 00:00:00';
-        const dateIn = req.query.dateIn;
+        const dateIn = new Date();
 
         const now = new Date(dateIn);
         const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -116,7 +116,7 @@ async function insertVendorReconsilation(req, res) {
             if (vendorCategory === 'Group A') {
                 threshold = 0;
             } else if (vendorCategory === 'Group B') {
-                threshold = 95;
+                threshold = 90;
             } else if (vendorCategory === 'Group C') {
                 threshold = 100;
             }
@@ -201,7 +201,7 @@ async function insertVendorReconsilation(req, res) {
             // Determine group/threshold changes
             if (vendorCategory === 'Group A') {
                 if (currentMonthRecons > 12 && lastMonthRecon > 12 && olderMonthRecon > 12) {
-                    bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group B', threshold: 95 });
+                    bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group B', threshold: 90 });
                     await moveVendorGroup(tid, 'Group A', 'Group B')
                 } else if (currentMonthRecons > 12 && lastMonthRecon > 12) {
                     bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group A', threshold: 80 });
@@ -219,7 +219,9 @@ async function insertVendorReconsilation(req, res) {
                     bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group C', threshold: 100 });
                     await moveVendorGroup(tid, 'Group B', 'Group C')
                 } else if (currentMonthRecons > 20) {
-                    bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group B', threshold: 100 });
+                    bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group B', threshold: 95 });
+                } else if ((currentMonthRecons > 0 && currentMonthRecons < 20)) {
+                    bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group B', threshold: 90 });
                 } else if ((currentMonthRecons > 0 && currentMonthRecons < 12) && (lastMonthRecon < 12 && lastMonthRecon > 0)) {
                     bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group A', threshold: 80 });
                     await moveVendorGroup(tid, 'Group B', 'Group A')
