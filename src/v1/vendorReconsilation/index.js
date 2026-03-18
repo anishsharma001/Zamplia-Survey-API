@@ -11,7 +11,15 @@ async function insertVendorReconsilation(req, res) {
         //  const startDatel = '2025-11-15 01:00:00';
         // const endDatel = '2025-12-15 01:00:00';
         // const endDatel = '2026-02-15 00:00:00';
-        const dateIn = new Date();
+        let dateIn = new Date();
+
+        if (req?.query?.date) {
+            dateIn = req?.query?.date;
+        }
+        let vendorId = null;
+        if (req?.query?.vendorId) {
+            vendorId = req?.query?.vendorId;
+        }
 
         const now = new Date(dateIn);
         const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -33,11 +41,17 @@ async function insertVendorReconsilation(req, res) {
         const olderStartDate = fmtDate(olderStart);
         const olderEndDate = fmtDate(olderEnd);
 
+        let vendorFilter = ``;
+
+        if (vendorId) {
+            vendorFilter = ` AND _id = '${escapeStr(vendorId)}'`;
+        }
+
         // vendors
         const vendorQuery = `
             SELECT _id as vendorId, vendorName, vendor_category, v_id
             FROM vendors
-            WHERE vendor_category IN ('Group A', 'Group B', 'Group C') and isactive = 1;
+            WHERE vendor_category IN ('Group A', 'Group B', 'Group C') ${vendorFilter} and isactive = 1 
         `;
         const vendors = await execute(vendorQuery);
         if (!vendors || vendors.length === 0) return [];
@@ -70,10 +84,22 @@ async function insertVendorReconsilation(req, res) {
             WHERE p.tid IN (${vendorIdsList})
                 AND p.createdAt >= '${startDate}'
                 AND p.createdAt < '${endDate}'
-                AND s.apitype = 1
             GROUP BY p.tid
         `;
         const reconResults = await execute(reconQuery);
+        const reconOnlyQuery = `
+            SELECT 
+                p.tid AS vendorId,
+                SUM(CASE WHEN (p.status = 1 AND p.finalReconcileStatus = 25) THEN 1 ELSE 0 END) AS NegativeReconciliation,
+                SUM(CASE WHEN (p.status != 1 AND p.finalReconcileStatus = 1) THEN 1 ELSE 0 END) AS PositiveReconciliation
+            FROM participants p
+            LEFT JOIN studies s ON p.sid = s._id
+            WHERE p.tid IN (${vendorIdsList})
+                AND p.reconciledAt >= '${startDate}'
+                AND p.reconciledAt < '${endDate}'
+            GROUP BY p.tid
+        `;
+        const reconOnlyResults = await execute(reconOnlyQuery);
         const surveeyParticipantsQuery = `
             SELECT 
                 p.vid AS vendorId,
@@ -82,7 +108,6 @@ async function insertVendorReconsilation(req, res) {
             WHERE p.vid IN (${vendorIdsList})
                 AND p.created_At >= '${startDate}'
                 AND p.created_At < '${endDate}'
-                AND p.is_api_survey = 1
             GROUP BY p.vid
         `;
         const totalUser = await execute(surveeyParticipantsQuery);
@@ -93,6 +118,10 @@ async function insertVendorReconsilation(req, res) {
 
             let surveyParticipants = totalUser.find(t => t.vendorId === row.vendorId);
             let surveyParticipantsCount = surveyParticipants ? Number(surveyParticipants.TotalParticipants) : 0;
+
+            let reconOnlyResultsForVendor = reconOnlyResults.find(r => r.vendorId === row.vendorId);
+            let NegativeReconciliation = reconOnlyResultsForVendor ? Number(reconOnlyResultsForVendor.NegativeReconciliation) : 0;
+            let PositiveReconciliation = reconOnlyResultsForVendor ? Number(reconOnlyResultsForVendor.PositiveReconciliation) : 0;
 
             if (!surveyParticipantsCount) {
                 continue
@@ -108,17 +137,17 @@ async function insertVendorReconsilation(req, res) {
             const Revenue = Number(row.Revenue) || 0;
             const Expense = Number(row.Expense) || 0;
             const TotalCompletes = Number(row.TotalCompletes) || 0;
-            const NegativeReconciliation = Number(row.NegativeReconciliation) || 0;
-            const PositiveReconciliation = Number(row.PositiveReconciliation) || 0;
+            // const NegativeReconciliation = Number(row.NegativeReconciliation) || 0;
+            // const PositiveReconciliation = Number(row.PositiveReconciliation) || 0;
 
             let threshold = 0;
 
             if (vendorCategory === 'Group A') {
                 threshold = 0;
             } else if (vendorCategory === 'Group B') {
-                threshold = 90;
+                threshold = 80;
             } else if (vendorCategory === 'Group C') {
-                threshold = 100;
+                threshold = 90;
             }
 
             inserts.push(`('${vendorId}','${vendorName}','${vendorCategory}',${TotalParticipants},${Revenue},${Expense},${Number(calibr8Score)},${TotalCompletes}, ${PositiveReconciliation}, ${NegativeReconciliation},
@@ -200,35 +229,38 @@ async function insertVendorReconsilation(req, res) {
 
             // Determine group/threshold changes
             if (vendorCategory === 'Group A') {
-                if (currentMonthRecons > 12 && lastMonthRecon > 12 && olderMonthRecon > 12) {
-                    bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group B', threshold: 90 });
+                // if (currentMonthRecons > 12 && lastMonthRecon > 12 && olderMonthRecon > 12) {
+                //     bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group B', threshold: 90 });
+                //     await moveVendorGroup(tid, 'Group A', 'Group B')
+                // } else
+                if (currentMonthRecons > 12 && lastMonthRecon > 12) {
+                    bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group B', threshold: 80 });
                     await moveVendorGroup(tid, 'Group A', 'Group B')
-                } else if (currentMonthRecons > 12 && lastMonthRecon > 12) {
-                    bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group A', threshold: 80 });
                 } else if (currentMonthRecons > 12) {
                     await startCallibr8(v_id, configData, tid)
                     bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group A', threshold: 50 });
                 } else if (currentMonthRecons < 12 && threshold == 50) {
                     await stopCallibr8(v_id, configData, tid)
                     bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group A', threshold: 0 });
-                } else if (currentMonthRecons < 12 && lastMonthRecon < 12 && threshold == 80) {
-                    bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group A', threshold: 50 });
                 }
+                // else if (currentMonthRecons < 12 && lastMonthRecon < 12 && threshold == 80) {
+                //     bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group A', threshold: 50 });
+                // }
             } else if (vendorCategory === 'Group B') {
                 if (currentMonthRecons > 20 && lastMonthRecon > 20) {
-                    bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group C', threshold: 100 });
+                    bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group C', threshold: 90 });
                     await moveVendorGroup(tid, 'Group B', 'Group C')
                 } else if (currentMonthRecons > 20) {
-                    bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group B', threshold: 95 });
-                } else if ((currentMonthRecons > 0 && currentMonthRecons < 20)) {
-                    bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group B', threshold: 90 });
+                    bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group B', threshold: 85 });
+                } else if ((currentMonthRecons > 0 && currentMonthRecons < 20 && threshold == 85)) {
+                    bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group B', threshold: 80 });
                 } else if ((currentMonthRecons > 0 && currentMonthRecons < 12) && (lastMonthRecon < 12 && lastMonthRecon > 0)) {
-                    bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group A', threshold: 80 });
+                    bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group A', threshold: 50 });
                     await moveVendorGroup(tid, 'Group B', 'Group A')
                 }
             } else {
                 if ((currentMonthRecons > 0 && currentMonthRecons <= 20) && (lastMonthRecon > 0 && lastMonthRecon <= 20) && olderMonthRecon <= 20) {
-                    bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group B', threshold: 95 });
+                    bulkUpdates.groupChanges.push({ id: aid, vendorCategory: 'Group B', threshold: 85 });
                     await moveVendorGroup(tid, 'Group C', 'Group B')
                 }
             }
@@ -314,7 +346,7 @@ const moveVendorGroup = async (
         return { success: false, message: "Server error" };
     }
 };
-const startCallibr8 = async (v_id, configData, tid) => {
+const stopCallibr8 = async (v_id, configData, tid) => {
 
   if (v_id && tid && configData.length) {
     const { id, sids } = configData[0];
@@ -335,7 +367,7 @@ const startCallibr8 = async (v_id, configData, tid) => {
   }
 };
 
-const stopCallibr8 = async (v_id, configData, tid) => {
+const startCallibr8 = async (v_id, configData, tid) => {
 
   if (v_id && tid && configData.length) {
     const { id, sids } = configData[0];
