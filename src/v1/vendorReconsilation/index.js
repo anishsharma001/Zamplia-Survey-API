@@ -141,23 +141,25 @@ async function insertVendorReconsilation(req, res) {
             // const PositiveReconciliation = Number(row.PositiveReconciliation) || 0;
 
             let threshold = 0;
-
+            let islucidEnable = 0
             if (vendorCategory === 'Group A') {
                 threshold = 0;
+                islucidEnable = 1
             } else if (vendorCategory === 'Group B') {
                 threshold = 80;
+                islucidEnable = 1
             } else if (vendorCategory === 'Group C') {
                 threshold = 90;
             }
 
             inserts.push(`('${vendorId}','${vendorName}','${vendorCategory}',${TotalParticipants},${Revenue},${Expense},${Number(calibr8Score)},${TotalCompletes}, ${PositiveReconciliation}, ${NegativeReconciliation},
-                ${threshold}, '${endDate}', '${endDate}')`);
+                ${threshold}, '${endDate}', '${endDate}', '${islucidEnable}')`);
         }
 
         if (inserts.length > 0) {
             const insertQuery = `
                 INSERT INTO vendor_category_summary
-                    (tid, vendorName, vendorCategory, TotalParticipants, Revenue, Expense, calibar8_score, TotalComplete, PositiveReconciliation, NegativeReconciliation, threshold, created_at, updatedAt)
+                    (tid, vendorName, vendorCategory, TotalParticipants, Revenue, Expense, calibar8_score, TotalComplete, PositiveReconciliation, NegativeReconciliation, threshold, created_at, updatedAt, islucidEnable)
                 VALUES ${inserts.join(',')}
             `;
             await execute(insertQuery);
