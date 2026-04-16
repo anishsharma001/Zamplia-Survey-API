@@ -95,8 +95,8 @@ async function insertVendorReconsilation(req, res) {
             FROM participants p
             LEFT JOIN studies s ON p.sid = s._id
             WHERE p.tid IN (${vendorIdsList})
-                AND p.reconciledAt >= '${startDate}'
-                AND p.reconciledAt < '${endDate}'
+                AND p.createdAt >= '${startDate}'
+                AND p.createdAt < '${endDate}'
             GROUP BY p.tid
         `;
         const reconOnlyResults = await execute(reconOnlyQuery);
