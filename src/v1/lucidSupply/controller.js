@@ -42,8 +42,8 @@ async function surveyPulling(lang_code, CPIGTE, CPILTE, LengthOfInterviewLTE, Co
     let getAllocatedSurveys = await getAllAllocatedSurveys(lucidLangId);
     // let completeData = await getCompletesOfLucidLink(lang_code);
     const lucidBuyerList = await getlucidBuyerListFromDb();
-    allLiveSurveys = await filterSurveys(allLiveSurveys, 0, lucidBuyerList);
-    getAllocatedSurveys = await filterSurveys(getAllocatedSurveys, 1, lucidBuyerList);
+   // allLiveSurveys = await filterSurveys(allLiveSurveys, 0, lucidBuyerList);
+   // getAllocatedSurveys = await filterSurveys(getAllocatedSurveys, 1, lucidBuyerList);
 
     let allFilterSurveys = [...allLiveSurveys, ...getAllocatedSurveys];
     if (!allFilterSurveys.length) {

@@ -21,7 +21,7 @@ async function createSuveyBundle(data, lang_code) {
     surveyEndDate.setDate(surveyEndDate.getDate() + 15);
     let studyId = `LD${surveyIndex.SurveyNumber}`;
     surveyIds.push([surveyIndex.SurveyNumber]);
-    if (surveyIndex.BidLengthOfInterview <= 25 && surveyIndex.BidIncidence > 15) {
+    if (surveyIndex.BidLengthOfInterview <= 30 && surveyIndex.BidIncidence > 10) {
       if (surveyIndex.isAllowSurvey == 0 && surveyIndex.RPI && surveyIndex.RPI.value !== undefined) {
         surveyDataBundle.push([
           studyId,
