@@ -93,12 +93,12 @@ async function surveyPulling(lang_code, CPIGTE, CPILTE, LengthOfInterviewLTE, Co
 
     // filter the pause quota webhook study
     const getFilterAllocatedSurveys = await filterLiveAllocatedSurveys(allIncomingSurveyIds);
-    if (getFilterAllocatedSurveys.length) {
-      let filterSurveys1 = surveyBundleData[0].filter((o) => getFilterAllocatedSurveys.some((o2) => o2._id == o[0]));
-      let filterSurveys2 = surveyBundleData[1].filter((o) => getFilterAllocatedSurveys.some((o2) => o2._id == o[0]));
-      surveyBundleData[0] = surveyBundleData[0].filter((o) => !filterSurveys1.some((o2) => o2[0] == o[0]));
-      surveyBundleData[1] = surveyBundleData[1].filter((o) => !filterSurveys2.some((o2) => o2[0] == o[0]));
-    }
+    // if (getFilterAllocatedSurveys.length) {
+    //   let filterSurveys1 = surveyBundleData[0].filter((o) => getFilterAllocatedSurveys.some((o2) => o2._id == o[0]));
+    //   let filterSurveys2 = surveyBundleData[1].filter((o) => getFilterAllocatedSurveys.some((o2) => o2._id == o[0]));
+    //   surveyBundleData[0] = surveyBundleData[0].filter((o) => !filterSurveys1.some((o2} => o2[0] == o[0]));
+    //   surveyBundleData[1] = surveyBundleData[1].filter((o) => !filterSurveys2.some((o2) => o2[0] == o[0]));
+    // }
     // upsert studies data and vendors mapping data
     if (surveyBundleData[0].length) {
       await upsertStudiesData(surveyBundleData[0]);
