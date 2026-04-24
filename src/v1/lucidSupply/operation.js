@@ -22,7 +22,7 @@ async function createSuveyBundle(data, lang_code) {
     let studyId = `LD${surveyIndex.SurveyNumber}`;
     surveyIds.push([surveyIndex.SurveyNumber]);
     if (surveyIndex.BidLengthOfInterview <= 30 && surveyIndex.BidIncidence > 10) {
-      if (surveyIndex.isAllowSurvey == 0 && surveyIndex.RPI && surveyIndex.RPI.value !== undefined) {
+      if (surveyIndex.RPI && surveyIndex.RPI.value !== undefined) {
         surveyDataBundle.push([
           studyId,
           surveyIndex.SurveyName.substring(0, 50),
